@@ -98,6 +98,7 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
 .search-user img{width:36px;height:36px;border-radius:50%;object-fit:cover;background:#1a1a1a}
 .search-user .su-info{display:flex;flex-direction:column;gap:1px}
 .search-user .su-login{font-weight:600;font-size:14px}
+.user-badge{display:inline-block;width:18px;height:18px;vertical-align:middle;margin-left:4px;object-fit:contain;border-radius:3px}
 .search-user .su-desc{font-weight:300;font-size:12px;color:rgba(255,255,255,0.25)}
 .search-empty{color:rgba(255,255,255,0.15);font-weight:300;font-size:14px;text-align:center;padding:40px 0}
 
@@ -383,6 +384,8 @@ function api(url,opts){var o=opts||{};o.credentials='include';o.headers=o.header
 
 function toast(m,err){var t=document.getElementById('toast');t.textContent=m;t.className='toast show'+(err?' error':'');setTimeout(function(){t.className='toast'},2500)}
 function logAction(a){if(!user)return;api('/logs',{method:'POST',body:JSON.stringify({action:a,device:navigator.userAgent.substring(0,80)})}).catch(function(){})}
+function badgeImg(u){return u&&u.badge?'<img class="user-badge" src="'+u.badge+'" alt="">':''}
+function formatJoinDate(d){if(!d)return'';var dt=new Date(d);var months=['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];return dt.getDate()+' '+months[dt.getMonth()]+' '+dt.getFullYear()}
 
 function fetchUsers(ids,callback){
   if(!ids.length){callback({});return}
@@ -443,7 +446,7 @@ function renderPost(p){
   var time=p.created_at?new Date(p.created_at).toLocaleString('ru'):'';
   var reject='';
   if(p.status==='rejected'&&p.reject_reason)reject='<div class="pc-reject">Отклонено: '+p.reject_reason+'</div>';
-  d.innerHTML='<div class="pc-head"><img src="'+av+'" alt="" data-uid="'+(u.id||0)+'"><span class="pc-user" data-uid="'+(u.id||0)+'">'+(u.login||'?')+'</span><span class="pc-cat">'+catLabel+'</span></div><div class="pc-title">'+(p.title||'')+'</div><div class="pc-text">'+preview+'</div><div class="pc-time">'+time+'</div>'+reject;
+  d.innerHTML='<div class="pc-head"><img src="'+av+'" alt="" data-uid="'+(u.id||0)+'"><span class="pc-user" data-uid="'+(u.id||0)+'">'+(u.login||'?')+badgeImg(u)+'</span><span class="pc-cat">'+catLabel+'</span></div><div class="pc-title">'+(p.title||'')+'</div><div class="pc-text">'+preview+'</div><div class="pc-time">'+time+'</div>'+reject;
   var clickables=d.querySelectorAll('[data-uid]');
   for(var i=0;i<clickables.length;i++){clickables[i].addEventListener('click',function(e){e.stopPropagation();var uid=parseInt(this.dataset.uid);if(uid)openUserProfile(uid)})}
   d.addEventListener('click',function(e){if(e.target.closest('[data-uid]'))return;openPostView(p.id)});
@@ -519,7 +522,7 @@ document.getElementById('search-input').addEventListener('input',function(){
   searchTimer=setTimeout(function(){
     api('/users/search?q='+encodeURIComponent(q)).then(function(r){return r.json()}).then(function(rows){
       if(!rows||!rows.length){res.innerHTML='<div class="search-empty">Ничего не найдено</div>';return}
-      var h='';for(var i=0;i<rows.length;i++){var u=rows[i];var av=u.avatar&&u.avatar.indexOf('data:')===0?u.avatar:'default-avatar.jpg';h+='<div class="search-user" data-uid="'+u.id+'"><img src="'+av+'" alt=""><div class="su-info"><span class="su-login">'+u.login+'</span><span class="su-desc">'+(u.description||'Нет описания')+'</span></div></div>'}
+      var h='';for(var i=0;i<rows.length;i++){var u=rows[i];var av=u.avatar&&u.avatar.indexOf('data:')===0?u.avatar:'default-avatar.jpg';h+='<div class="search-user" data-uid="'+u.id+'"><img src="'+av+'" alt=""><div class="su-info"><span class="su-login">'+u.login+badgeImg(u)+'</span><span class="su-desc">'+(u.description||'Нет описания')+'</span></div></div>'}
       res.innerHTML=h;
       var items=res.querySelectorAll('.search-user');
       for(var i=0;i<items.length;i++){items[i].addEventListener('click',function(){var uid=parseInt(this.dataset.uid);openUserProfile(uid)})}
@@ -563,9 +566,11 @@ function openUserProfile(uid){
     var banner=u.banner&&u.banner.indexOf('data:')===0?u.banner:'';
     var card=document.getElementById('profile-view-card');
     if(!isOwn)api('/logs',{method:'POST',body:JSON.stringify({action:'view_profile',device:'view_profile:'+u.id})}).catch(function(){});
+    var joinStr=formatJoinDate(u.created_at);
     var html='<div class="profile-banner" style="cursor:default">'+(banner?'<img src="'+banner+'" alt="">':'<span class="banner-placeholder">Баннер</span>')+'</div>';
     html+='<div class="profile-body"><div class="profile-avatar-wrap" style="cursor:default"><img src="'+av+'" alt=""></div>';
-    html+='<div class="profile-login">'+u.login+'</div>';
+    html+='<div class="profile-login">'+u.login+badgeImg(u)+'</div>';
+    if(joinStr)html+='<div style="font-size:12px;color:rgba(255,255,255,0.25);margin-top:6px;font-weight:300">На форуме с '+joinStr+'</div>';
     html+='<div class="profile-desc"><textarea rows="3" readonly style="cursor:default">'+(u.description||'Нет описания')+'</textarea></div>';
     html+='<div class="pv-posts" id="pv-posts-'+u.id+'"><div style="text-align:center;color:rgba(255,255,255,0.15);padding:20px 0;font-size:13px">Загрузка постов...</div></div>';
     html+='<div class="profile-actions">';
@@ -605,7 +610,7 @@ function openPostView(pid){
       var catLabel=p.category==='manual'?'Мануал':'Другое';
       var time=p.created_at?new Date(p.created_at).toLocaleString('ru'):'';
       var head=document.getElementById('pv-head');
-      head.innerHTML='<img src="'+av+'" alt="" onclick="event.stopPropagation();openUserProfile('+p.user_id+')"><span class="pv-author" onclick="event.stopPropagation();openUserProfile('+p.user_id+')">'+(u.login||'?')+'</span><span class="pv-cat">'+catLabel+'</span>';
+      head.innerHTML='<img src="'+av+'" alt="" onclick="event.stopPropagation();openUserProfile('+p.user_id+')"><span class="pv-author" onclick="event.stopPropagation();openUserProfile('+p.user_id+')">'+(u.login||'?')+badgeImg(u)+'</span><span class="pv-cat">'+catLabel+'</span>';
       var body=document.getElementById('pv-body');
       var text=(p.content||'').replace(/(https?:\/\/[^\s]+)/g,'<a href="$1" target="_blank">$1</a>');
       var mediaHtml='';
@@ -652,13 +657,13 @@ function renderComment(c,uMap,childMap){
   var u=uMap[c.user_id]||{};
   var av=u.avatar&&u.avatar.indexOf('data:')===0?u.avatar:'default-avatar.jpg';
   var time=c.created_at?new Date(c.created_at).toLocaleString('ru'):'';
-  var h='<div class="pv-comment" data-cid="'+c.id+'"><img src="'+av+'" alt=""><div class="pv-comment-body"><span class="pv-comment-user">'+(u.login||'?')+'</span><span class="pv-comment-time">'+time+'</span><div class="pv-comment-text">'+escapeHtml(c.content||'')+'</div><span class="pv-comment-reply" data-reply="'+c.id+'">Ответить</span></div></div>';
+  var h='<div class="pv-comment" data-cid="'+c.id+'"><img src="'+av+'" alt=""><div class="pv-comment-body"><span class="pv-comment-user">'+(u.login||'?')+badgeImg(u)+'</span><span class="pv-comment-time">'+time+'</span><div class="pv-comment-text">'+escapeHtml(c.content||'')+'</div><span class="pv-comment-reply" data-reply="'+c.id+'">Ответить</span></div></div>';
   if(childMap[c.id]){
     for(var i=0;i<childMap[c.id].length;i++){
       var ch=childMap[c.id][i];var cu=uMap[ch.user_id]||{};
       var cav=cu.avatar&&cu.avatar.indexOf('data:')===0?cu.avatar:'default-avatar.jpg';
       var ctime=ch.created_at?new Date(ch.created_at).toLocaleString('ru'):'';
-      h+='<div class="pv-comment pv-comment-child" data-cid="'+ch.id+'"><img src="'+cav+'" alt=""><div class="pv-comment-body"><span class="pv-comment-user">'+(cu.login||'?')+'</span><span class="pv-comment-time">'+ctime+'</span><div class="pv-comment-text">'+escapeHtml(ch.content||'')+'</div></div></div>';
+      h+='<div class="pv-comment pv-comment-child" data-cid="'+ch.id+'"><img src="'+cav+'" alt=""><div class="pv-comment-body"><span class="pv-comment-user">'+(cu.login||'?')+badgeImg(cu)+'</span><span class="pv-comment-time">'+ctime+'</span><div class="pv-comment-text">'+escapeHtml(ch.content||'')+'</div></div></div>';
     }
   }
   return h;
@@ -752,8 +757,10 @@ function loadAdminTab(tab){
     api('/admin/users').then(function(r){return r.json()}).then(function(rows){
       if(!rows||!rows.length){el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.15);padding:40px 0">Нет пользователей</div>';return}
       var h='';for(var i=0;i<rows.length;i++){
-        var u=rows[i];h+='<div class="admin-card"><div class="ac-label">'+u.login+'</div><div class="ac-row">';
+        var u=rows[i];h+='<div class="admin-card"><div class="ac-label">'+u.login+(u.badge?'<img class="user-badge" src="'+u.badge+'" alt="">':'')+'</div><div class="ac-row">';
         h+='<button class="ac-btn blue" onclick="adminShowPass('+u.id+',\''+u.login+'\')">Пароль</button>';
+        h+='<button class="ac-btn green" onclick="adminSetBadge('+u.id+')">Значок</button>';
+        if(u.badge)h+='<button class="ac-btn gray" onclick="adminRemoveBadge('+u.id+')">Убрать значок</button>';
         h+='<button class="ac-btn gray" onclick="adminToggleAdmin('+u.id+')">Админ</button>';
         h+='<button class="ac-btn red" onclick="adminBanUser('+u.id+',\''+u.login+'\')">Бан</button></div></div>';
       }
@@ -789,6 +796,22 @@ function loadAdminTab(tab){
 window.adminDeletePost=function(id){
   if(!confirm('Удалить пост?'))return;
   api('/admin/posts/'+id,{method:'DELETE'}).then(function(){loadAdminTab('moderation');toast('Пост удалён')}).catch(function(){toast('Ошибка',true)});
+};
+window.adminSetBadge=function(uid){
+  var inp=document.createElement('input');inp.type='file';inp.accept='image/*';
+  inp.onchange=function(e){
+    var f=e.target.files[0];if(!f)return;
+    var r=new FileReader();r.onload=function(ev){
+      resizeImage(ev.target.result,64,64,0.9,function(d){
+        api('/admin/badge/'+uid,{method:'PUT',body:JSON.stringify({badge:d})}).then(function(r){return r.json()}).then(function(){
+          toast('Значок установлен');loadAdminTab('users');
+        }).catch(function(){toast('Ошибка',true)});
+      });
+    };r.readAsDataURL(f);
+  };inp.click();
+};
+window.adminRemoveBadge=function(uid){
+  api('/admin/badge/'+uid,{method:'PUT',body:JSON.stringify({badge:''})}).then(function(){toast('Значок убран');loadAdminTab('users')}).catch(function(){toast('Ошибка',true)});
 };
 
 window.adminApprove=function(id){
