@@ -160,6 +160,12 @@ app.patch('/api/admin/posts/:id',authMiddleware,adminOnly,function(req,res){
   pool.query('UPDATE posts SET status=$1,moderator_id=$2,reject_reason=$3 WHERE id=$4',[status,req.userId,reason,req.params.id]).then(function(){res.json({ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
 });
 
+app.delete('/api/admin/posts/:id',authMiddleware,adminOnly,function(req,res){
+  pool.query('DELETE FROM comments WHERE post_id=$1',[req.params.id]).then(function(){
+    pool.query('DELETE FROM posts WHERE id=$1',[req.params.id]).then(function(){res.json({ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
+  }).catch(function(){res.status(500).json({error:'db error'})});
+});
+
 app.get('/api/admin/users',authMiddleware,adminOnly,function(req,res){
   pool.query('SELECT id,login,description FROM users ORDER BY id').then(function(r){res.json(r.rows)}).catch(function(){res.status(500).json([])});
 });

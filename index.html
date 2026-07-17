@@ -15,6 +15,7 @@ body{background:#000;font-family:'Roboto',sans-serif;color:#fff}
 canvas#pc{display:block;position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;transition:opacity 0.8s ease}
 canvas#pc.fade-out{opacity:0;pointer-events:none}
 canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none}
+#cursor-glow{position:fixed;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(120,160,255,0.12) 0%,rgba(120,160,255,0.04) 40%,transparent 70%);pointer-events:none;z-index:0;transform:translate(-50%,-50%)}
 
 .panel{position:fixed;top:0;left:0;width:50%;height:100%;z-index:1;display:flex;flex-direction:column;justify-content:center;padding:40px 60px}
 .panel.hidden{display:none !important}
@@ -139,7 +140,7 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
 .feed.open{display:block}
 .feed-inner{width:min(900px,100%);margin:0 auto;display:flex;flex-direction:column;gap:16px}
 
-.post-card{background:rgba(255,255,255,0.03);border-radius:16px;padding:20px;transition:background 0.15s;cursor:pointer}
+.post-card{background:rgba(255,255,255,0.03);border-radius:16px;padding:24px 28px;transition:background 0.15s;cursor:pointer}
 .post-card:hover{background:rgba(255,255,255,0.05)}
 .post-card .pc-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .post-card .pc-head img{width:32px;height:32px;border-radius:50%;object-fit:cover;background:#1a1a1a;cursor:pointer}
@@ -229,6 +230,8 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
 </style>
 </head>
 <body>
+
+<div id="cursor-glow"></div>
 
 <div id="mobile-overlay">
   <p class="mo-title">Режим для ПК</p>
@@ -437,7 +440,7 @@ function renderPost(p){
   var u=p._user||{};
   var av=u&&u.avatar&&u.avatar.indexOf('data:')===0?u.avatar:'default-avatar.jpg';
   var catLabel=p.category==='manual'?'Мануал':'Другое';
-  var preview=(p.content||'').substring(0,120);
+  var preview=(p.content||'').substring(0,400);
   if(preview.length<(p.content||'').length)preview+='...';
   preview=preview.replace(/(https?:\/\/[^\s]+)/g,'<a href="$1" target="_blank" onclick="event.stopPropagation()">$1</a>');
   var time=p.created_at?new Date(p.created_at).toLocaleString('ru'):'';
@@ -612,7 +615,7 @@ function openPostView(pid){
         else if(p.media_type&&p.media_type.indexOf('audio')===0)mediaHtml='<audio class="pv-media" controls src="'+p.media+'"></audio>';
         else mediaHtml='<div class="pv-media-load" onclick="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'">Показать изображение</div><img class="pv-media" src="'+p.media+'" alt="" style="display:none">';
       }
-      body.innerHTML='<div class="pv-title">'+(p.title||'')+'</div><div class="pv-text">'+text+'</div>'+mediaHtml+'<div class="pv-meta"><span>'+time+'</span></div>';
+      body.innerHTML='<div class="pv-title">'+(p.title||'')+'</div><div class="pv-text">'+text+'</div>'+mediaHtml+'<div class="pv-meta"><span>'+time+'</span>'+(isAdmin?'<span style="cursor:pointer;color:rgba(255,60,60,0.6)" onclick="adminDeletePost('+p.id+');document.getElementById(\'post-view\').classList.remove(\'open\');document.getElementById(\'feed\').style.display=\'\'">Удалить пост</span>':'')+'</div>';
       document.getElementById('post-view').classList.add('open');
       document.getElementById('feed').style.display='none';
       api('/logs',{method:'POST',body:JSON.stringify({action:'view_post',device:''+pid})}).catch(function(){});
@@ -739,7 +742,7 @@ function loadAdminTab(tab){
       fetchUsers(ids,function(uMap){
         var h='';for(var i=0;i<rows.length;i++){
           var p=rows[i],u=uMap[p.user_id]||{};var text=(p.content||'').substring(0,200);
-          h+='<div class="admin-card"><div class="ac-label">'+(u.login||'?')+' — '+p.title+'</div><div class="ac-sub">'+text+'</div><div class="ac-row"><button class="ac-btn green" onclick="adminApprove('+p.id+')">Принять</button><button class="ac-btn red" onclick="adminReject('+p.id+')">Отклонить</button></div></div>';
+          h+='<div class="admin-card"><div class="ac-label">'+(u.login||'?')+' — '+p.title+'</div><div class="ac-sub">'+text+'</div><div class="ac-row"><button class="ac-btn green" onclick="adminApprove('+p.id+')">Принять</button><button class="ac-btn red" onclick="adminReject('+p.id+')">Отклонить</button><button class="ac-btn red" onclick="adminDeletePost('+p.id+')">Удалить</button></div></div>';
         }
         el.innerHTML=h;
       });
@@ -782,6 +785,11 @@ function loadAdminTab(tab){
   }
 }
 
+window.adminDeletePost=function(id){
+  if(!confirm('Удалить пост?'))return;
+  api('/admin/posts/'+id,{method:'DELETE'}).then(function(){loadAdminTab('moderation');toast('Пост удалён')}).catch(function(){toast('Ошибка',true)});
+};
+
 window.adminApprove=function(id){
   api('/admin/posts/'+id,{method:'PATCH',body:JSON.stringify({status:'approved'})}).then(function(){loadAdminTab('moderation');toast('Принято')}).catch(function(){toast('Ошибка',true)});
 };
@@ -810,6 +818,8 @@ window.adminUnban=function(id){
 };
 
 api('/auth/me').then(function(r){if(!r.ok)return;return r.json()}).then(function(u){if(u)enterApp(u)}).catch(function(){});
+var glow=document.getElementById('cursor-glow');
+document.addEventListener('mousemove',function(e){glow.style.left=e.clientX+'px';glow.style.top=e.clientY+'px'});
 })();
 </script>
 
