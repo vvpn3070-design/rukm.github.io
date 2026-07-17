@@ -65,8 +65,8 @@ app.post('/api/auth/register',function(req,res){
       var u=r.rows[0],tk=token();
       pool.query('INSERT INTO tokens(token,user_id) VALUES($1,$2)',[tk,u.id]).then(function(){
         res.cookie('session',tk,{httpOnly:true,maxAge:30*24*3600*1000,sameSite:'lax'});
-        res.json(u);
-      }).catch(function(){res.json(u)});
+        u.isAdmin=false;res.json(u);
+      }).catch(function(){u.isAdmin=false;res.json(u)});
     }).catch(function(){res.status(500).json({error:'db error'})});
   }).catch(function(){res.status(500).json({error:'db error'})});
 });
@@ -83,7 +83,9 @@ app.post('/api/auth/login',function(req,res){
       var tk=token();
       pool.query('INSERT INTO tokens(token,user_id) VALUES($1,$2)',[tk,u.id]).then(function(){
         res.cookie('session',tk,{httpOnly:true,maxAge:30*24*3600*1000,sameSite:'lax'});
-        res.json({id:u.id,login:u.login});
+        pool.query('SELECT user_id FROM admins WHERE user_id=$1',[u.id]).then(function(a){
+          res.json({id:u.id,login:u.login,isAdmin:a.rows.length>0});
+        }).catch(function(){res.json({id:u.id,login:u.login})});
       }).catch(function(){res.json({id:u.id,login:u.login})});
     }).catch(function(){res.status(500).json({error:'db error'})});
   }).catch(function(){res.status(500).json({error:'db error'})});
