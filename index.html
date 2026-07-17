@@ -397,6 +397,7 @@ function fetchUsers(ids,callback){
 
 function enterApp(u){
   user=u;
+  if(u.isAdmin){isAdmin=true;document.getElementById('sidebar-admin').style.display='flex'}
   document.getElementById('panel').classList.add('hidden');
   document.getElementById('pc').classList.add('fade-out');
   document.getElementById('avatar-btn').style.display='block';
