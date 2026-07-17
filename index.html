@@ -15,7 +15,6 @@ body{background:#000;font-family:'Roboto',sans-serif;color:#fff}
 canvas#pc{display:block;position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;transition:opacity 0.8s ease}
 canvas#pc.fade-out{opacity:0;pointer-events:none}
 canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none}
-#cursor-glow{position:fixed;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(120,160,255,0.12) 0%,rgba(120,160,255,0.04) 40%,transparent 70%);pointer-events:none;z-index:0;transform:translate(-50%,-50%)}
 
 .panel{position:fixed;top:0;left:0;width:50%;height:100%;z-index:1;display:flex;flex-direction:column;justify-content:center;padding:40px 60px}
 .panel.hidden{display:none !important}
@@ -230,8 +229,6 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
 </style>
 </head>
 <body>
-
-<div id="cursor-glow"></div>
 
 <div id="mobile-overlay">
   <p class="mo-title">Режим для ПК</p>
@@ -498,10 +495,12 @@ document.getElementById('profile-save').addEventListener('click',function(){
   if(!user)return;var desc=document.getElementById('profile-desc-input').value;
   var avatarSrc=document.getElementById('profile-avatar-img').src;
   var bannerSrc=document.getElementById('banner-img').style.display==='block'?document.getElementById('banner-img').src:'';
-  function doSave(av,ba){api('/users/'+user.id,{method:'PATCH',body:JSON.stringify({description:desc,avatar:av||'',banner:ba||''})}).then(function(r){if(!r.ok)throw 0;user.description=desc;if(av)user.avatar=av;if(ba)user.banner=ba;userCache[user.id]=user;toast('Сохранено');document.getElementById('profile-overlay').classList.remove('open')}).catch(function(){toast('Ошибка',true)})}
-  var done=0,avD='',baD='';function check(){done++;if(done===2)doSave(avD,baD)}
-  if(avatarSrc&&avatarSrc.indexOf('default-avatar')===-1&&avatarSrc.indexOf('data:')===0)resizeImage(avatarSrc,120,120,0.75,function(d){avD=d;check()});else check();
-  if(bannerSrc&&bannerSrc.indexOf('data:')===0)resizeImage(bannerSrc,600,200,0.75,function(d){baD=d;check()});else check();
+  var payload={description:desc};
+  function doSave(){api('/users/'+user.id,{method:'PATCH',body:JSON.stringify(payload)}).then(function(r){if(!r.ok)throw 0;user.description=desc;userCache[user.id]=user;toast('Сохранено');document.getElementById('profile-overlay').classList.remove('open')}).catch(function(){toast('Ошибка',true)})}
+  var todo=0,done=0;function check(){done++;if(done>=todo)doSave()}
+  if(avatarSrc&&avatarSrc.indexOf('data:')===0){todo++;resizeImage(avatarSrc,120,120,0.75,function(d){payload.avatar=d;check()})}
+  if(bannerSrc&&bannerSrc.indexOf('data:')===0){todo++;resizeImage(bannerSrc,600,200,0.75,function(d){payload.banner=d;check()})}
+  if(!todo)doSave();
 });
 
 function closeSidebar(){document.getElementById('hamburger').classList.remove('active');document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebar-overlay').classList.remove('open')}
@@ -709,20 +708,22 @@ document.getElementById('cr-file-input').addEventListener('change',function(e){
   document.getElementById('cr-file-list').textContent=names.join(', ');
 });
 
+var creatingPost=false;
 document.getElementById('cr-submit').addEventListener('click',function(){
-  if(!user)return;
+  if(!user||creatingPost)return;
   var cat=document.querySelector('.cat-btn.active').dataset.cat;
   var title=document.getElementById('cr-title').value.trim();
   var text=document.getElementById('cr-text').value.trim();
   if(!title){toast('Укажите название',true);return}
   if(cat==='manual'){
     if(!text){toast('Напишите текст мануала',true);return}
-    api('/posts',{method:'POST',body:JSON.stringify({category:'manual',title:title,content:text})}).then(function(r){if(!r.ok)throw 0;toast('Опубликовано!');document.getElementById('create-panel').classList.remove('open');loadFeed()}).catch(function(){toast('Ошибка',true)});
+    creatingPost=true;
+    api('/posts',{method:'POST',body:JSON.stringify({category:'manual',title:title,content:text})}).then(function(r){if(!r.ok)throw 0;toast('Опубликовано!');document.getElementById('create-panel').classList.remove('open');loadFeed()}).catch(function(){toast('Ошибка',true)}).finally(function(){creatingPost=false});
   }else{
     if(!text&&!currentFiles.length){toast('Добавьте контент',true);return}
-    document.getElementById('cr-submit').disabled=true;document.getElementById('cr-submit').textContent='Загрузка...';
+    creatingPost=true;document.getElementById('cr-submit').disabled=true;document.getElementById('cr-submit').textContent='Загрузка...';
     var done=0,mediaUrl='',mediaType='',total=currentFiles.length||1;
-    function afterAll(){if(done<total)return;api('/posts',{method:'POST',body:JSON.stringify({category:'other',title:title,content:text,media:mediaUrl,media_type:mediaType})}).then(function(r){if(!r.ok)throw 0;toast('Отправлено на модерацию');document.getElementById('create-panel').classList.remove('open');document.getElementById('cr-submit').disabled=false;document.getElementById('cr-submit').textContent='Опубликовать';loadFeed()}).catch(function(){toast('Ошибка',true);document.getElementById('cr-submit').disabled=false;document.getElementById('cr-submit').textContent='Опубликовать'})}
+    function afterAll(){if(done<total)return;api('/posts',{method:'POST',body:JSON.stringify({category:'other',title:title,content:text,media:mediaUrl,media_type:mediaType})}).then(function(r){if(!r.ok)throw 0;toast('Отправлено на модерацию');document.getElementById('create-panel').classList.remove('open');document.getElementById('cr-submit').disabled=false;document.getElementById('cr-submit').textContent='Опубликовать';loadFeed()}).catch(function(){toast('Ошибка',true);document.getElementById('cr-submit').disabled=false;document.getElementById('cr-submit').textContent='Опубликовать'}).finally(function(){creatingPost=false})}
     if(currentFiles.length){var f=currentFiles[0],reader=new FileReader();reader.onload=function(e){resizeImage(e.target.result,600,450,0.7,function(d){mediaUrl=d;mediaType=f.type.indexOf('video')===0?f.type:'image/webp';done++;afterAll()})};reader.readAsDataURL(f)}else{afterAll()}
   }
 });
