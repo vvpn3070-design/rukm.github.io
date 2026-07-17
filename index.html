@@ -634,8 +634,8 @@ function openUserProfile(uid){
     }).catch(function(){var el=document.getElementById('pv-posts-'+u.id);if(el)el.innerHTML='';});
   }).catch(function(){toast('Ошибка',true)});
 }
-function closeProfile(){document.getElementById('profile-view-overlay').classList.remove('open')}
-function openEditProfile(){document.getElementById('profile-overlay').classList.add('open')}
+window.closeProfile=function(){document.getElementById('profile-view-overlay').classList.remove('open')};
+window.openEditProfile=function(){document.getElementById('profile-overlay').classList.add('open')};
 
 document.getElementById('profile-view-overlay').addEventListener('click',function(e){if(e.target===this)closeProfile()});
 
