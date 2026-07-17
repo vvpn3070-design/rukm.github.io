@@ -110,23 +110,39 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
 .topic-result .tr-title{font-weight:700;font-size:15px}
 .topic-result .tr-text{font-weight:300;font-size:12px;color:rgba(255,255,255,0.3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 
-.profile-view-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:32;display:none;background:rgba(0,0,0,0.92);justify-content:center;align-items:center}
+.profile-view-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:46;display:none;background:#080808;flex-direction:column;align-items:center;overflow-y:auto}
 .profile-view-overlay.open{display:flex}
-.pv-stats{margin-top:16px}
-.pv-stats-inner{display:flex;gap:16px}
-.pv-stat{font-weight:300;font-size:13px;color:rgba(255,255,255,0.35)}
-.pv-stat b{font-weight:700;color:rgba(255,255,255,0.6)}
-.pv-posts{margin-top:20px;display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto;padding-bottom:8px}
-.pv-posts-title{font-weight:700;font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:4px}
-.pv-post{background:rgba(255,255,255,0.03);border-radius:10px;padding:12px 14px}
-.pv-post-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.pv-post-title{font-weight:600;font-size:13px}
-.pv-post-cat{font-size:10px;color:rgba(255,255,255,0.2);padding:2px 8px;background:rgba(255,255,255,0.04);border-radius:8px}
-.pv-status{font-size:10px;padding:2px 8px;border-radius:8px;margin-left:auto}
-.pv-status.approved{background:rgba(80,200,120,0.1);color:rgba(80,200,120,0.7)}
-.pv-status.pending{background:rgba(255,200,60,0.1);color:rgba(255,200,60,0.7)}
-.pv-status.rejected{background:rgba(255,60,60,0.1);color:rgba(255,80,80,0.7)}
-.pv-post-text{font-weight:300;font-size:12px;color:rgba(255,255,255,0.3);margin-top:6px;line-height:1.4}
+.pv-close{position:fixed;top:28px;right:28px;z-index:2;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,0.04);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.pv-close:hover{background:rgba(255,255,255,0.08)}
+.pv-close svg{width:18px;height:18px;stroke:rgba(255,255,255,0.4);fill:none;stroke-width:1.5}
+.pv-banner{width:min(700px,100%);height:200px;background:#161616;border-radius:0 0 16px 16px;overflow:hidden;position:relative}
+.pv-banner img{width:100%;height:100%;object-fit:cover}
+.pv-banner .banner-placeholder{color:rgba(255,255,255,0.1);font-weight:300;font-size:13px}
+.pv-avatar-wrap{width:100px;height:100px;border-radius:50%;overflow:hidden;margin-top:-50px;position:relative;border:3px solid #080808}
+.pv-avatar-wrap img{width:100%;height:100%;object-fit:cover}
+.pv-info{width:min(700px,90vw);padding-bottom:60px}
+.pv-user-row{display:flex;align-items:center;gap:10px;margin-top:12px}
+.pv-user-login{font-weight:900;font-size:24px}
+.pv-join{font-size:13px;color:rgba(255,255,255,0.25);font-weight:300;margin-top:4px}
+.pv-desc{font-weight:300;font-size:14px;color:rgba(255,255,255,0.5);margin-top:16px;line-height:1.6}
+.pv-stats-row{display:flex;gap:24px;margin-top:20px;padding:16px 0;border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06)}
+.pv-stat{display:flex;flex-direction:column;align-items:center;gap:4px}
+.pv-stat-num{font-weight:900;font-size:18px}
+.pv-stat-label{font-size:12px;color:rgba(255,255,255,0.3);font-weight:300}
+.pv-actions{display:flex;gap:12px;margin-top:20px;justify-content:flex-end}
+.pv-actions button{padding:10px 24px;border-radius:14px;border:none;font-family:'Roboto',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:transform 0.2s}
+.pv-actions button:active{transform:scale(0.95)}
+.pv-actions .pv-btn-save{background:#fff;color:#000}
+.pv-actions .pv-btn-close{background:none;color:rgba(255,255,255,0.4)}
+.pv-actions .pv-btn-del{background:rgba(255,60,60,0.15);color:rgba(255,80,80,0.9)}
+.pv-section-title{font-weight:700;font-size:14px;color:rgba(255,255,255,0.4);margin:28px 0 12px}
+.pv-my-posts{display:flex;flex-direction:column;gap:10px}
+.pv-my-post{background:rgba(255,255,255,0.03);border-radius:12px;padding:14px 16px;cursor:pointer;transition:background 0.15s}
+.pv-my-post:hover{background:rgba(255,255,255,0.06)}
+.pv-my-post .mp-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pv-my-post .mp-title{font-weight:600;font-size:14px}
+.pv-my-post .mp-cat{font-size:10px;color:rgba(255,255,255,0.2);padding:2px 8px;background:rgba(255,255,255,0.04);border-radius:8px}
+.pv-my-post .mp-text{font-weight:300;font-size:12px;color:rgba(255,255,255,0.3);margin-top:6px;line-height:1.4}
 
 .full-panel{position:fixed;top:0;left:0;width:100%;height:100%;z-index:45;display:none;background:#080808;flex-direction:column;align-items:center;overflow-y:auto}
 .full-panel.open{display:flex}
@@ -285,7 +301,8 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
 </div>
 
 <div class="profile-view-overlay" id="profile-view-overlay">
-  <div class="profile-card" id="profile-view-card"></div>
+  <button class="pv-close" onclick="document.getElementById('profile-view-overlay').classList.remove('open')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  <div id="profile-view-card"></div>
 </div>
 
 <div class="post-view" id="post-view">
@@ -565,39 +582,46 @@ function openUserProfile(uid){
     var av=u.avatar&&u.avatar.indexOf('data:')===0?u.avatar:'default-avatar.jpg';
     var banner=u.banner&&u.banner.indexOf('data:')===0?u.banner:'';
     var card=document.getElementById('profile-view-card');
-    if(!isOwn)api('/logs',{method:'POST',body:JSON.stringify({action:'view_profile',device:'view_profile:'+u.id})}).catch(function(){});
     var joinStr=formatJoinDate(u.created_at);
-    var html='<div class="profile-banner" style="cursor:default">'+(banner?'<img src="'+banner+'" alt="">':'<span class="banner-placeholder">Баннер</span>')+'</div>';
-    html+='<div class="profile-body"><div class="profile-avatar-wrap" style="cursor:default"><img src="'+av+'" alt=""></div>';
-    html+='<div class="profile-login">'+u.login+badgeImg(u)+'</div>';
-    if(joinStr)html+='<div style="font-size:12px;color:rgba(255,255,255,0.25);margin-top:6px;font-weight:300">На форуме с '+joinStr+'</div>';
-    html+='<div class="profile-desc"><textarea rows="3" readonly style="cursor:default">'+(u.description||'Нет описания')+'</textarea></div>';
-    html+='<div class="pv-posts" id="pv-posts-'+u.id+'"><div style="text-align:center;color:rgba(255,255,255,0.15);padding:20px 0;font-size:13px">Загрузка постов...</div></div>';
-    html+='<div class="profile-actions">';
-    if(isOwn){html+='<button class="close-btn" onclick="document.getElementById(\'profile-view-overlay\').classList.remove(\'open\')">Закрыть</button><button class="save-btn" onclick="document.getElementById(\'profile-view-overlay\').classList.remove(\'open\');document.getElementById(\'profile-overlay\').classList.add(\'open\')">Редактировать</button>'}
-    else{html+='<button class="close-btn" onclick="document.getElementById(\'profile-view-overlay\').classList.remove(\'open\')">Закрыть</button>';if(isAdmin)html+='<button class="del-btn" onclick="adminDeleteUser('+u.id+',\''+u.login+'\')">Удалить</button>'}
-    html+='</div></div>';
-    card.innerHTML=html;
+    var views=u.views||0;
+    var h='<div class="pv-banner">'+(banner?'<img src="'+banner+'" alt="">':'<span class="banner-placeholder"></span>')+'</div>';
+    h+='<div class="pv-avatar-wrap"><img src="'+av+'" alt=""></div>';
+    h+='<div class="pv-info">';
+    h+='<div class="pv-user-row"><span class="pv-user-login">'+escapeHtml(u.login||'')+'</span>'+badgeImg(u)+'</div>';
+    if(joinStr)h+='<div class="pv-join">На форуме с '+joinStr+'</div>';
+    if(u.description)h+='<div class="pv-desc">'+escapeHtml(u.description)+'</div>';
+    h+='<div class="pv-stats-row"><div class="pv-stat"><div class="pv-stat-num">'+views+'</div><div class="pv-stat-label">просмотров</div></div><div class="pv-stat"><div class="pv-stat-num" id="pv-post-count-'+u.id+'">-</div><div class="pv-stat-label">постов</div></div></div>';
+    h+='<div class="pv-actions">';
+    if(isOwn)h+='<button class="pv-btn-close" onclick="closeProfile()">Назад</button><button class="pv-btn-save" onclick="closeProfile();openEditProfile()">Редактировать</button>';
+    else{h+='<button class="pv-btn-close" onclick="closeProfile()">Назад</button>';if(isAdmin)h+='<button class="pv-btn-del" onclick="adminDeleteUser('+u.id+',\''+(u.login||'')+'\')">Удалить пользователя</button>'}
+    h+='</div>';
+    h+='<div class="pv-section-title">Посты</div>';
+    h+='<div class="pv-my-posts" id="pv-posts-'+u.id+'"><div style="text-align:center;color:rgba(255,255,255,0.15);padding:20px 0;font-size:13px">Загрузка...</div></div>';
+    h+='</div>';
+    card.innerHTML=h;
     document.getElementById('profile-view-overlay').classList.add('open');
     api('/posts/user/'+u.id).then(function(r){return r.json()}).then(function(posts){
       var el=document.getElementById('pv-posts-'+u.id);if(!el)return;
-      if(!posts||!posts.length){el.innerHTML='';return}
-      var h='<div class="pv-posts-title">Посты: '+posts.length+'</div>';
-      for(var i=0;i<posts.length;i++){
+      var countEl=document.getElementById('pv-post-count-'+u.id);
+      if(countEl)countEl.textContent=(posts||[]).length;
+      if(!posts||!posts.length){el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.15);padding:20px 0;font-size:13px">Нет постов</div>';return}
+      var h='';for(var i=0;i<posts.length;i++){
         var p=posts[i];var catLabel=p.category==='manual'?'Мануал':'Другое';
-        var statusLabel='';
-        if(p.status==='approved')statusLabel='<span class="pv-status approved">Одобрено</span>';
-        else if(p.status==='pending')statusLabel='<span class="pv-status pending">На модерации</span>';
-        else if(p.status==='rejected')statusLabel='<span class="pv-status rejected">Отклонено</span>';
-        var preview=(p.content||'').substring(0,80);if(preview.length<(p.content||'').length)preview+='...';
-        h+='<div class="pv-post"><div class="pv-post-head"><span class="pv-post-title">'+(p.title||'')+'</span><span class="pv-post-cat">'+catLabel+'</span>'+statusLabel+'</div><div class="pv-post-text">'+preview+'</div></div>';
+        var statusBadge='';
+        if(p.status==='approved')statusBadge='<span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(80,200,120,0.1);color:rgba(80,200,120,0.7)">Одобрено</span>';
+        else if(p.status==='pending')statusBadge='<span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(255,200,60,0.1);color:rgba(255,200,60,0.7)">Модерация</span>';
+        else if(p.status==='rejected')statusBadge='<span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(255,60,60,0.1);color:rgba(255,80,80,0.7)">Отклонено</span>';
+        var preview=(p.content||'').substring(0,160);if(preview.length<(p.content||'').length)preview+='...';
+        h+='<div class="pv-my-post" onclick="closeProfile();openPostView('+p.id+')"><div class="mp-head"><span class="mp-title">'+escapeHtml(p.title||'')+'</span><span class="mp-cat">'+catLabel+'</span>'+statusBadge+'</div><div class="mp-text">'+escapeHtml(preview)+'</div></div>';
       }
       el.innerHTML=h;
-    }).catch(function(){});
+    }).catch(function(){var el=document.getElementById('pv-posts-'+u.id);if(el)el.innerHTML='';});
   }).catch(function(){toast('Ошибка',true)});
 }
+function closeProfile(){document.getElementById('profile-view-overlay').classList.remove('open')}
+function openEditProfile(){document.getElementById('profile-overlay').classList.add('open')}
 
-document.getElementById('profile-view-overlay').addEventListener('click',function(e){if(e.target===this)this.classList.remove('open')});
+document.getElementById('profile-view-overlay').addEventListener('click',function(e){if(e.target===this)closeProfile()});
 
 var currentPostId=null,currentReplyTo=null;
 function openPostView(pid){

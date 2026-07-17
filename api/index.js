@@ -8,7 +8,7 @@ function hash(p){return crypto.createHash('sha256').update(p).digest('hex')}
 function token(){return crypto.randomBytes(32).toString('hex')}
 
 var AUTH_SQL=`
-CREATE TABLE IF NOT EXISTS users(id SERIAL PRIMARY KEY,login TEXT UNIQUE NOT NULL,password TEXT NOT NULL,created_at TIMESTAMPTZ DEFAULT now(),avatar TEXT DEFAULT '',description TEXT DEFAULT '',banner TEXT DEFAULT '',badge TEXT DEFAULT '');
+CREATE TABLE IF NOT EXISTS users(id SERIAL PRIMARY KEY,login TEXT UNIQUE NOT NULL,password TEXT NOT NULL,created_at TIMESTAMPTZ DEFAULT now(),avatar TEXT DEFAULT '',description TEXT DEFAULT '',banner TEXT DEFAULT '',badge TEXT DEFAULT '',views INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS posts(id SERIAL PRIMARY KEY,user_id INTEGER,category TEXT DEFAULT 'other',title TEXT DEFAULT '',content TEXT DEFAULT '',media TEXT DEFAULT '',media_type TEXT DEFAULT '',status TEXT DEFAULT 'pending',reject_reason TEXT DEFAULT '',moderator_id INTEGER,created_at TIMESTAMPTZ DEFAULT now());
 CREATE TABLE IF NOT EXISTS admins(user_id INTEGER PRIMARY KEY);
 CREATE TABLE IF NOT EXISTS bans(id SERIAL PRIMARY KEY,user_id INTEGER,ip TEXT DEFAULT '',reason TEXT DEFAULT '',created_at TIMESTAMPTZ DEFAULT now());
@@ -132,7 +132,8 @@ app.get('/api/users/search',optionalAuth,function(req,res){
 });
 
 app.get('/api/users/:id',optionalAuth,function(req,res){
-  pool.query('SELECT id,login,avatar,description,banner,badge,created_at FROM users WHERE id=$1',[req.params.id]).then(function(r){
+  pool.query('UPDATE users SET views=views+1 WHERE id=$1',[req.params.id]).catch(function(){});
+  pool.query('SELECT id,login,avatar,description,banner,badge,created_at,views FROM users WHERE id=$1',[req.params.id]).then(function(r){
     if(!r.rows.length)return res.status(404).json({error:'not found'});
     res.json(r.rows[0]);
   }).catch(function(){res.status(500).json({error:'db error'})});
