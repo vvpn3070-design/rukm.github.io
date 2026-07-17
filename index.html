@@ -120,7 +120,7 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
 .pv-banner:not(.has-founder){border-radius:0 0 16px 16px}
 .pv-banner img{width:100%;height:100%;object-fit:cover}
 .pv-banner .banner-placeholder{color:rgba(255,255,255,0.1);font-weight:300;font-size:13px}
-.pv-founder{width:min(700px,100%);background:linear-gradient(90deg,rgba(255,255,255,0.0),rgba(255,255,255,0.08),rgba(255,255,255,0.0));padding:10px 0;display:flex;justify-content:center;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.pv-founder{width:min(700px,100%);background:rgba(255,255,255,0.04);padding:10px 0;display:flex;justify-content:center;align-items:center;gap:8px;border-top:1px solid rgba(255,255,255,0.08);border-bottom:1px solid rgba(255,255,255,0.08)}
 .pv-founder-name{font-weight:900;font-size:14px;color:#fff;letter-spacing:0.5px}
 .pv-founder{font-weight:300;font-size:13px;color:rgba(255,255,255,0.5);letter-spacing:0.3px}
 .pv-avatar-wrap{width:100px;height:100px;border-radius:50%;overflow:hidden;margin-top:-50px;position:relative;border:3px solid #080808}
@@ -350,6 +350,7 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
       <button class="active" data-tab="moderation">Модерация</button>
       <button data-tab="users">Пользователи</button>
       <button data-tab="bans">Баны</button>
+      <button data-tab="deleted-names">Никы</button>
       <button data-tab="logs">Логи</button>
     </div>
     <div id="admin-content"></div>
@@ -591,9 +592,9 @@ function openUserProfile(uid){
     var card=document.getElementById('profile-view-card');
     var joinStr=formatJoinDate(u.created_at);
     var views=u.views||0;
-    var isFounder=u.login==='kovax'||u.login==='kowax';
+    var isFounder=u.login==='kovax';
     var h='<div class="pv-banner'+(isFounder?' has-founder':'')+'">'+(banner?'<img src="'+banner+'" alt="">':'<span class="banner-placeholder"></span>')+'</div>';
-    if(isFounder)h+='<div class="pv-founder"><span class="pv-founder-name">Kowax</span> — Отец Форума</div>';
+    if(isFounder)h+='<div class="pv-founder"><span class="pv-founder-name">kovax</span> — Отец Форума</div>';
     h+='<div class="pv-avatar-wrap"><img src="'+av+'" alt=""></div>';
     h+='<div class="pv-info">';
     h+='<div class="pv-user-row"><span class="pv-user-login">'+escapeHtml(u.login||'')+'</span>'+badgeImg(u)+'</div>';
@@ -729,8 +730,17 @@ document.getElementById('top-search').addEventListener('focus',function(){docume
 document.getElementById('top-search').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();this.blur();this.dispatchEvent(new Event('focus'))}});
 
 window.adminDeleteUser=function(id,login){
-  if(!confirm('Удалить пользователя '+login+' и все его посты?'))return;
-  api('/admin/users/'+id,{method:'DELETE'}).then(function(){document.getElementById('profile-view-overlay').classList.remove('open');toast(login+' удалён');loadFeed()}).catch(function(){toast('Ошибка',true)});
+  if(!confirm('Удалить пользователя '+login+'? Никнейм будет заблокирован навсегда.'))return;
+  api('/admin/users/'+id,{method:'DELETE'}).then(function(){document.getElementById('profile-view-overlay').classList.remove('open');toast(login+' удалён, ник заблокирован');loadFeed()}).catch(function(){toast('Ошибка',true)});
+};
+window.adminAddDeletedName=function(){
+  var inp=document.getElementById('dn-add-input');if(!inp)return;
+  var name=inp.value.trim();if(!name)return toast('Введите ник',true);
+  api('/admin/deleted-names',{method:'POST',body:JSON.stringify({name:name,reason:'Заблокировано администратором'})}).then(function(){toast(name+' заблокирован');loadAdminTab('deleted-names')}).catch(function(){toast('Ошибка',true)});
+};
+window.adminRemoveDeletedName=function(name){
+  if(!confirm('Разрешить ник '+name+'?'))return;
+  api('/admin/deleted-names/'+encodeURIComponent(name),{method:'DELETE'}).then(function(){toast(name+' разрешён');loadAdminTab('deleted-names')}).catch(function(){toast('Ошибка',true)});
 };
 
 document.getElementById('sidebar-create').addEventListener('click',function(){closeSidebar();document.getElementById('create-panel').classList.add('open');document.getElementById('cr-title').value='';document.getElementById('cr-text').value='';document.getElementById('cr-file-list').textContent='';document.getElementById('cr-file-input').value='';currentFiles=[];document.getElementById('cr-media-section').style.display='none'});
@@ -823,6 +833,17 @@ function loadAdminTab(tab){
         }
         el.innerHTML=h;
       });
+    }).catch(function(){el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.15);padding:40px 0">Ошибка</div>'});
+  }else if(tab==='deleted-names'){
+    var addHtml='<div class="admin-card"><div class="ac-label">Добавить запрещённый ник</div><div class="ac-row"><input type="text" id="dn-add-input" placeholder="Никнейм" style="flex:1;padding:8px 12px;border-radius:10px;border:none;background:rgba(255,255,255,0.06);color:#fff;font-size:13px;font-family:Roboto,sans-serif"><button class="ac-btn red" onclick="adminAddDeletedName()">Заблокировать</button></div></div>';
+    api('/admin/deleted-names').then(function(r){return r.json()}).then(function(rows){
+      var h=addHtml;
+      if(!rows||!rows.length){h+='<div style="text-align:center;color:rgba(255,255,255,0.15);font-weight:300;padding:20px 0">Нет запрещённых ников</div>';el.innerHTML=h;return}
+      for(var i=0;i<rows.length;i++){
+        var n=rows[i];var time=n.banned_at?new Date(n.banned_at).toLocaleString('ru'):'';
+        h+='<div class="admin-card"><div class="ac-label" style="font-weight:700">'+escapeHtml(n.name)+'</div><div class="ac-sub">'+(n.reason||'')+' — '+time+'</div><div class="ac-row"><button class="ac-btn red" onclick="adminRemoveDeletedName(\''+escapeHtml(n.name)+'\')">Разрешить</button></div></div>';
+      }
+      el.innerHTML=h;
     }).catch(function(){el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.15);padding:40px 0">Ошибка</div>'});
   }
 }

@@ -57,16 +57,20 @@ app.get('/api/auth/me',authMiddleware,function(req,res){
 app.post('/api/auth/register',function(req,res){
   var login=(req.body.login||'').trim(),pw=(req.body.password||'').trim();
   if(!login||!pw)return res.status(400).json({error:'fields required'});
-  if(login.length<2||login.length>30)return res.status(400).json({error:'login 2-30 chars'});
+  if(login.length<5||login.length>17)return res.status(400).json({error:'Никнейм от 5 до 17 символов'});
+  if(!/^[a-zA-Z0-9_]+$/.test(login))return res.status(400).json({error:'Никнейм только буквы, цифры и _'});
   if(pw.length<3)return res.status(400).json({error:'password min 3'});
-  pool.query('SELECT id FROM users WHERE login=$1',[login]).then(function(r){
-    if(r.rows.length)return res.status(409).json({error:'login taken'});
-    pool.query('INSERT INTO users(login,password) VALUES($1,$2) RETURNING id,login',[login,hash(pw)]).then(function(r){
-      var u=r.rows[0],tk=token();
-      pool.query('INSERT INTO tokens(token,user_id) VALUES($1,$2)',[tk,u.id]).then(function(){
-        res.cookie('session',tk,{httpOnly:true,maxAge:30*24*3600*1000,sameSite:'lax'});
-        u.isAdmin=false;res.json(u);
-      }).catch(function(){u.isAdmin=false;res.json(u)});
+  pool.query('SELECT name FROM deleted_names WHERE name=$1',[login]).then(function(dr){
+    if(dr.rows.length)return res.status(409).json({error:'Этот никнейм запрещён'});
+    pool.query('SELECT id FROM users WHERE login=$1',[login]).then(function(r){
+      if(r.rows.length)return res.status(409).json({error:'login taken'});
+      pool.query('INSERT INTO users(login,password) VALUES($1,$2) RETURNING id,login',[login,hash(pw)]).then(function(r){
+        var u=r.rows[0],tk=token();
+        pool.query('INSERT INTO tokens(token,user_id) VALUES($1,$2)',[tk,u.id]).then(function(){
+          res.cookie('session',tk,{httpOnly:true,maxAge:30*24*3600*1000,sameSite:'lax'});
+          u.isAdmin=false;res.json(u);
+        }).catch(function(){u.isAdmin=false;res.json(u)});
+      }).catch(function(){res.status(500).json({error:'db error'})});
     }).catch(function(){res.status(500).json({error:'db error'})});
   }).catch(function(){res.status(500).json({error:'db error'})});
 });
@@ -132,7 +136,15 @@ app.get('/api/users/search',optionalAuth,function(req,res){
 });
 
 app.get('/api/users/:id',optionalAuth,function(req,res){
-  pool.query('UPDATE users SET views=views+1 WHERE id=$1',[req.params.id]).catch(function(){});
+  if(req.userId&&req.userId!=parseInt(req.params.id)){
+    pool.query('INSERT INTO profile_views(profile_user_id,viewer_user_id) VALUES($1,$2) ON CONFLICT DO NOTHING',[parseInt(req.params.id),req.userId]).then(function(){
+      pool.query('UPDATE users SET views=(SELECT COUNT(*) FROM profile_views WHERE profile_user_id=$1) WHERE id=$1',[parseInt(req.params.id)]).catch(function(){});
+    }).catch(function(){});
+  }else if(!req.userId){
+    pool.query('INSERT INTO profile_views(profile_user_id,viewer_user_id) VALUES($1,0) ON CONFLICT DO NOTHING',[parseInt(req.params.id)]).then(function(){
+      pool.query('UPDATE users SET views=(SELECT COUNT(*) FROM profile_views WHERE profile_user_id=$1) WHERE id=$1',[parseInt(req.params.id)]).catch(function(){});
+    }).catch(function(){});
+  }
   pool.query('SELECT id,login,avatar,description,banner,badge,created_at,views FROM users WHERE id=$1',[req.params.id]).then(function(r){
     if(!r.rows.length)return res.status(404).json({error:'not found'});
     res.json(r.rows[0]);
@@ -208,23 +220,33 @@ app.delete('/api/admin/bans/:id',authMiddleware,adminOnly,function(req,res){
   pool.query('DELETE FROM bans WHERE id=$1',[req.params.id]).then(function(){res.json({ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
 });
 
-app.put('/api/admin/badge/:uid',authMiddleware,adminOnly,function(req,res){
-  var badge=req.body.badge||'';
-  pool.query('UPDATE users SET badge=$1 WHERE id=$2',[badge,req.params.uid]).then(function(){res.json({ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
+app.get('/api/admin/deleted-names',authMiddleware,adminOnly,function(req,res){
+  pool.query('SELECT name,banned_at,reason FROM deleted_names ORDER BY banned_at DESC').then(function(r){res.json(r.rows)}).catch(function(){res.status(500).json([])});
+});
+
+app.post('/api/admin/deleted-names',authMiddleware,adminOnly,function(req,res){
+  var name=(req.body.name||'').trim(),reason=req.body.reason||'';
+  if(!name)return res.status(400).json({error:'name required'});
+  pool.query('INSERT INTO deleted_names(name,reason) VALUES($1,$2) ON CONFLICT (name) DO NOTHING',[name,reason]).then(function(){res.json({ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
+});
+
+app.delete('/api/admin/deleted-names/:name',authMiddleware,adminOnly,function(req,res){
+  pool.query('DELETE FROM deleted_names WHERE name=$1',[decodeURIComponent(req.params.name)]).then(function(){res.json({ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
 });
 
 app.delete('/api/admin/users/:id',authMiddleware,adminOnly,function(req,res){
   var uid=parseInt(req.params.id);
-  if(uid===req.userId)return res.status(400).json({error:'cant delete self'});
-  Promise.all([
-    pool.query('DELETE FROM posts WHERE user_id=$1',[uid]),
-    pool.query('DELETE FROM bans WHERE user_id=$1',[uid]),
-    pool.query('DELETE FROM logs WHERE user_id=$1',[uid]),
-    pool.query('DELETE FROM comments WHERE user_id=$1',[uid]),
-    pool.query('DELETE FROM admins WHERE user_id=$1',[uid]),
-    pool.query('DELETE FROM tokens WHERE user_id=$1',[uid]),
-    pool.query('DELETE FROM users WHERE id=$1',[uid])
-  ]).then(function(){res.json({ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
+  pool.query('SELECT user_id FROM admins WHERE user_id=$1',[uid]).then(function(r){
+    if(r.rows.length)return res.status(403).json({error:'cant delete admins'});
+    pool.query('SELECT login FROM users WHERE id=$1',[uid]).then(function(ur){
+      var login=ur.rows.length?ur.rows[0].login:'';
+      pool.query('INSERT INTO deleted_names(name,reason) VALUES($1,$2) ON CONFLICT (name) DO NOTHING',[login,'Удалён администратором']).then(function(){
+        pool.query('DELETE FROM tokens WHERE user_id=$1',[uid]).then(function(){
+          pool.query('DELETE FROM users WHERE id=$1',[uid]).then(function(){res.json({ok:true,login:login})}).catch(function(){res.status(500).json({error:'db error'})});
+        }).catch(function(){res.status(500).json({error:'db error'})});
+      }).catch(function(){res.status(500).json({error:'db error'})});
+    }).catch(function(){res.status(500).json({error:'db error'})});
+  }).catch(function(){res.status(500).json({error:'db error'})});
 });
 
 app.get('/api/admin/logs',authMiddleware,adminOnly,function(req,res){
