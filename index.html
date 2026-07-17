@@ -240,7 +240,7 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
 .post-view .pv-comment-text{font-weight:300;font-size:13px;color:rgba(255,255,255,0.5);margin-top:4px;line-height:1.5;word-break:break-word}
 .post-view .pv-comment-reply{font-size:11px;color:rgba(255,255,255,0.2);cursor:pointer;margin-top:4px;display:inline-block}
 .post-view .pv-comment-reply:hover{color:rgba(255,255,255,0.5)}
-.post-view .pv-comment-child{margin-left:30px;border-left:1px solid rgba(255,255,255,0.04);padding-left:10px}
+.post-view .pv-comment-child{}
 .post-view .pv-add-comment{display:flex;gap:10px;margin-top:16px;align-items:flex-start}
 .post-view .pv-add-comment textarea{flex:1;background:rgba(255,255,255,0.04);border:none;border-radius:12px;padding:10px 14px;color:#fff;font-family:'Roboto',sans-serif;font-weight:300;font-size:13px;outline:none;resize:none;min-height:40px;max-height:120px}
 .post-view .pv-add-comment textarea::placeholder{color:rgba(255,255,255,0.2)}
@@ -573,11 +573,15 @@ document.getElementById('topic-search-input').addEventListener('input',function(
           var p=filtered[i],u=uMap[p.user_id]||{};
           var catLabel=p.category==='manual'?'Мануал':'Другое';
           var preview=(p.content||'').substring(0,100);
-          h+='<div class="topic-result" data-pid="'+p.id+'"><div class="tr-head"><span class="tr-user">'+(u.login||'?')+'</span><span class="tr-cat">'+catLabel+'</span></div><div class="tr-title">'+(p.title||'')+'</div><div class="tr-text">'+preview+'</div></div>';
+          h+='<div class="topic-result" data-pid="'+p.id+'"><div class="tr-head"><span class="tr-user" data-uid="'+(u.id||0)+'">'+(u.login||'?')+badgeImg(u)+'</span><span class="tr-cat">'+catLabel+'</span></div><div class="tr-title">'+(p.title||'')+'</div><div class="tr-text">'+preview+'</div></div>';
         }
         res.innerHTML=h;
         var items=res.querySelectorAll('.topic-result');
-        for(var i=0;i<items.length;i++){items[i].addEventListener('click',function(){var pid=parseInt(this.dataset.pid);document.getElementById('topic-search-panel').classList.remove('open');openPostView(pid)})}
+        for(var i=0;i<items.length;i++){items[i].addEventListener('click',function(e){
+          var uidEl=e.target.closest('[data-uid]');
+          if(uidEl){e.stopPropagation();var uid=parseInt(uidEl.dataset.uid);if(uid)openUserProfile(uid);return}
+          var pid=parseInt(this.dataset.pid);document.getElementById('topic-search-panel').classList.remove('open');openPostView(pid)
+        })}
       });
     }).catch(function(){res.innerHTML='<div class="search-empty">Ошибка</div>'});
   },250);
@@ -688,17 +692,18 @@ function loadComments(pid){
   }).catch(function(){});
 }
 
-function renderComment(c,uMap,childMap){
+function renderComment(c,uMap,childMap,depth){
+  if(depth===undefined)depth=0;
   var u=uMap[c.user_id]||{};
   var av=u.avatar&&u.avatar.indexOf('data:')===0?u.avatar:'default-avatar.jpg';
   var time=c.created_at?new Date(c.created_at).toLocaleString('ru'):'';
-  var h='<div class="pv-comment" data-cid="'+c.id+'"><img src="'+av+'" alt=""><div class="pv-comment-body"><span class="pv-comment-user">'+(u.login||'?')+badgeImg(u)+'</span><span class="pv-comment-time">'+time+'</span><div class="pv-comment-text">'+escapeHtml(c.content||'')+'</div><span class="pv-comment-reply" data-reply="'+c.id+'">Ответить</span></div></div>';
+  var uid=c.user_id||0;
+  var cls=depth===0?'pv-comment':'pv-comment pv-comment-child';
+  var ml=depth>0?' style="margin-left:'+Math.min(depth,10)*28+'px;border-left:1px solid rgba(255,255,255,0.04);padding-left:10px"':'';
+  var h='<div class="'+cls+'" data-cid="'+c.id+'"'+ml+'><img src="'+av+'" alt="" data-uid="'+uid+'" style="cursor:pointer"><div class="pv-comment-body"><span class="pv-comment-user" data-uid="'+uid+'" style="cursor:pointer">'+(u.login||'?')+badgeImg(u)+'</span><span class="pv-comment-time">'+time+'</span><div class="pv-comment-text">'+escapeHtml(c.content||'')+'</div>'+(depth<10?'<span class="pv-comment-reply" data-reply="'+c.id+'">Ответить</span>':'')+'</div></div>';
   if(childMap[c.id]){
     for(var i=0;i<childMap[c.id].length;i++){
-      var ch=childMap[c.id][i];var cu=uMap[ch.user_id]||{};
-      var cav=cu.avatar&&cu.avatar.indexOf('data:')===0?cu.avatar:'default-avatar.jpg';
-      var ctime=ch.created_at?new Date(ch.created_at).toLocaleString('ru'):'';
-      h+='<div class="pv-comment pv-comment-child" data-cid="'+ch.id+'"><img src="'+cav+'" alt=""><div class="pv-comment-body"><span class="pv-comment-user">'+(cu.login||'?')+badgeImg(cu)+'</span><span class="pv-comment-time">'+ctime+'</span><div class="pv-comment-text">'+escapeHtml(ch.content||'')+'</div></div></div>';
+      h+=renderComment(childMap[c.id][i],uMap,childMap,depth+1);
     }
   }
   return h;
@@ -717,6 +722,8 @@ function submitComment(pid){
 }
 
 document.getElementById('pv-comments').addEventListener('click',function(e){
+  var uid=e.target.closest('[data-uid]');
+  if(uid){e.stopPropagation();var id=parseInt(uid.dataset.uid);if(id)openUserProfile(id);return}
   var btn=e.target.closest('.pv-comment-reply');if(!btn)return;
   currentReplyTo=parseInt(btn.dataset.reply);
   var rep=document.getElementById('pv-replying');
@@ -782,6 +789,10 @@ document.getElementById('admin-close').addEventListener('click',function(){docum
 document.querySelectorAll('.admin-tabs button').forEach(function(btn){
   btn.addEventListener('click',function(){document.querySelectorAll('.admin-tabs button').forEach(function(b){b.classList.remove('active')});this.classList.add('active');loadAdminTab(this.dataset.tab)});
 });
+document.getElementById('admin-content').addEventListener('click',function(e){
+  var uidEl=e.target.closest('[data-uid]');
+  if(uidEl){e.stopPropagation();var uid=parseInt(uidEl.dataset.uid);if(uid)openUserProfile(uid)}
+});
 
 function loadAdminTab(tab){
   var el=document.getElementById('admin-content');
@@ -792,7 +803,7 @@ function loadAdminTab(tab){
       fetchUsers(ids,function(uMap){
         var h='';for(var i=0;i<rows.length;i++){
           var p=rows[i],u=uMap[p.user_id]||{};var text=(p.content||'').substring(0,200);
-          h+='<div class="admin-card"><div class="ac-label">'+(u.login||'?')+' — '+p.title+'</div><div class="ac-sub">'+text+'</div><div class="ac-row"><button class="ac-btn green" onclick="adminApprove('+p.id+')">Принять</button><button class="ac-btn red" onclick="adminReject('+p.id+')">Отклонить</button><button class="ac-btn red" onclick="adminDeletePost('+p.id+')">Удалить</button></div></div>';
+          h+='<div class="admin-card"><div class="ac-label"><span data-uid="'+(u.id||0)+'" style="cursor:pointer">'+(u.login||'?')+'</span> — '+p.title+'</div><div class="ac-sub">'+text+'</div><div class="ac-row"><button class="ac-btn green" onclick="adminApprove('+p.id+')">Принять</button><button class="ac-btn red" onclick="adminReject('+p.id+')">Отклонить</button><button class="ac-btn red" onclick="adminDeletePost('+p.id+')">Удалить</button></div></div>';
         }
         el.innerHTML=h;
       });
@@ -817,7 +828,7 @@ function loadAdminTab(tab){
       fetchUsers(ids,function(uMap){
         var h='';for(var i=0;i<rows.length;i++){
           var b=rows[i],u=uMap[b.user_id]||{};
-          h+='<div class="admin-card"><div class="ac-label">'+(u.login||b.ip||'?')+'</div><div class="ac-sub">'+(b.reason||'')+'</div><div class="ac-row"><button class="ac-btn green" onclick="adminUnban('+b.id+')">Разбанить</button></div></div>';
+          h+='<div class="admin-card"><div class="ac-label"><span data-uid="'+(u.id||0)+'" style="cursor:pointer">'+(u.login||b.ip||'?')+'</span></div><div class="ac-sub">'+(b.reason||'')+'</div><div class="ac-row"><button class="ac-btn green" onclick="adminUnban('+b.id+')">Разбанить</button></div></div>';
         }
         el.innerHTML=h;
       });
@@ -829,7 +840,7 @@ function loadAdminTab(tab){
       fetchUsers(ids,function(uMap){
         var h='';for(var i=0;i<rows.length;i++){
           var l=rows[i],u=uMap[l.user_id]||{};var time=l.created_at?new Date(l.created_at).toLocaleString('ru'):'';
-          h+='<div class="admin-card"><div class="ac-label">'+(u.login||'?')+' — '+l.action+'</div><div class="ac-sub">'+l.device+'</div><div class="ac-sub">'+time+'</div></div>';
+          h+='<div class="admin-card"><div class="ac-label"><span data-uid="'+(u.id||0)+'" style="cursor:pointer">'+(u.login||'?')+'</span> — '+l.action+'</div><div class="ac-sub">'+l.device+'</div><div class="ac-sub">'+time+'</div></div>';
         }
         el.innerHTML=h;
       });
