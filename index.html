@@ -377,7 +377,7 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
 </script>
 <script>
 (function(){
-var API='https://vendetta-api-production.up.railway.app/api';
+var API='/api';
 var user=null,isAdmin=false,currentFiles=[],userCache={};
 function api(url,opts){var o=opts||{};o.credentials='include';o.headers=o.headers||{};o.headers['Content-Type']='application/json';return fetch(API+url,o)}
 
