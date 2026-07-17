@@ -377,27 +377,22 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
 </script>
 <script>
 (function(){
-var SB='https://slwzonmiaagcfkthvuzv.supabase.co/rest/v1/';
-var KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsd3pvbm1pYWFnY2ZrdGh2dXp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NTQ2MjgsImV4cCI6MjA5NjQzMDYyOH0.2OTf0x4AfV52gl284IaxZl4ypK08gOwaM-crIgndGUI';
-var H={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'};
+var API='https://vendetta-api-production.up.railway.app/api';
 var user=null,isAdmin=false,currentFiles=[],userCache={};
+function api(url,opts){var o=opts||{};o.credentials='include';o.headers=o.headers||{};o.headers['Content-Type']='application/json';return fetch(API+url,o)}
 
 function toast(m,err){var t=document.getElementById('toast');t.textContent=m;t.className='toast show'+(err?' error':'');setTimeout(function(){t.className='toast'},2500)}
-
-function fetchT(url,opts,ms){var ctrl=new AbortController();var timer=setTimeout(function(){ctrl.abort()},ms||15000);var o=Object.assign({},opts||{},{signal:ctrl.signal});return fetch(url,o).finally(function(){clearTimeout(timer)})}
-
-function logAction(action){if(!user)return;fetch(SB+'logs',{method:'POST',headers:H,body:JSON.stringify({user_id:user.id,ip:'0.0.0.0',device:navigator.userAgent.substring(0,80),action:action})}).catch(function(){})}
+function logAction(a){if(!user)return;api('/logs',{method:'POST',body:JSON.stringify({action:a,device:navigator.userAgent.substring(0,80)})}).catch(function(){})}
 
 function fetchUsers(ids,callback){
   if(!ids.length){callback({});return}
   var unique=[];for(var i=0;i<ids.length;i++){if(ids[i]&&!userCache[ids[i]])unique.push(ids[i])}
   if(!unique.length){var out={};for(var i=0;i<ids.length;i++)out[ids[i]]=userCache[ids[i]]||null;callback(out);return}
-  var q='id=in.('+unique.join(',')+')&select=id,login,avatar,description';
-  fetch(SB+'users?'+q,{headers:H}).then(function(r){return r.json()}).then(function(rows){
-    if(rows)for(var i=0;i<rows.length;i++)userCache[rows[i].id]=rows[i];
-    var out={};for(var i=0;i<ids.length;i++)out[ids[i]]=userCache[ids[i]]||null;
-    callback(out);
-  }).catch(function(){callback({})});
+  var done=0,total=unique.length;
+  function checkDone(){done++;if(done===total){var out={};for(var i=0;i<ids.length;i++)out[ids[i]]=userCache[ids[i]]||null;callback(out)}}
+  for(var i=0;i<unique.length;i++){(function(uid){
+    api('/users/'+uid).then(function(r){return r.json()}).then(function(u){userCache[u.id]=u}).catch(function(){}).finally(checkDone);
+  })(unique[i])}
 }
 
 function enterApp(u){
@@ -411,24 +406,21 @@ function enterApp(u){
   document.getElementById('feed').classList.add('open');
   document.getElementById('profile-login').textContent=u.login;
   userCache[u.id]=u;
-  try{localStorage.setItem('v_user',JSON.stringify({login:u.login,password:u.password}))}catch(e){}
   checkAdmin();loadFeed();logAction('login');
-  fetch(SB+'users?id=eq.'+u.id+'&select=id,login,avatar,description,banner',{headers:H}).then(function(r){return r.json()}).then(function(rows){
-    if(rows&&rows.length){user=rows[0];userCache[u.id]=rows[0];
-      if(u.avatar)document.getElementById('avatar-img').src=u.avatar;
-      if(user.banner){document.getElementById('banner-img').src=user.banner;document.getElementById('banner-img').style.display='block';document.getElementById('banner-text').style.display='none'}
-      if(user.description)document.getElementById('profile-desc-input').value=user.description;
-      if(user.avatar)document.getElementById('profile-avatar-img').src=user.avatar;
+  api('/users/'+u.id).then(function(r){return r.json()}).then(function(u2){
+    if(u2){user=u2;userCache[u2.id]=u2;
+      if(u2.avatar)document.getElementById('avatar-img').src=u2.avatar;
+      if(u2.banner){document.getElementById('banner-img').src=u2.banner;document.getElementById('banner-img').style.display='block';document.getElementById('banner-text').style.display='none'}
+      if(u2.description)document.getElementById('profile-desc-input').value=u2.description;
+      if(u2.avatar)document.getElementById('profile-avatar-img').src=u2.avatar;
     }
   }).catch(function(){});
 }
 
-function checkAdmin(){fetch(SB+'admins?user_id=eq.'+user.id,{headers:H}).then(function(r){return r.json()}).then(function(rows){isAdmin=rows&&rows.length>0;document.getElementById('sidebar-admin').style.display=isAdmin?'flex':'none'}).catch(function(){})}
+function checkAdmin(){api('/auth/me').then(function(r){return r.json()}).then(function(u){isAdmin=!!u.isAdmin;document.getElementById('sidebar-admin').style.display=isAdmin?'flex':'none'}).catch(function(){})}
 
 function loadFeed(){
-  fetch(SB+'posts?status=eq.approved&select=id,user_id,category,title,content,status,created_at,media_type&order=created_at.desc&limit=50',{headers:H})
-  .then(function(r){if(!r.ok)throw new Error(r.status);return r.json()})
-  .then(function(rows){
+  api('/posts').then(function(r){if(!r.ok)throw new Error(r.status);return r.json()}).then(function(rows){
     var el=document.getElementById('feed-inner');
     if(!rows||!rows.length){el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.15);font-weight:300;padding:60px 0">Пока нет постов</div>';return}
     var ids=[];for(var i=0;i<rows.length;i++)if(rows[i].user_id)ids.push(rows[i].user_id);
@@ -436,7 +428,7 @@ function loadFeed(){
       el.innerHTML='';
       for(var i=0;i<rows.length;i++){rows[i]._user=uMap[rows[i].user_id]||null;el.appendChild(renderPost(rows[i]))}
     });
-  }).catch(function(){var el=document.getElementById('feed-inner');el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.2);font-weight:300;padding:60px 0">Ошибка загрузки. <span style="cursor:pointer;text-decoration:underline" onclick="loadFeed()">Обновить</span></div>'});
+  }).catch(function(e){console.error(e);var el=document.getElementById('feed-inner');el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.2);font-weight:300;padding:60px 0">Ошибка загрузки. <span style="cursor:pointer;text-decoration:underline" onclick="loadFeed()">Обновить</span></div>'});
 }
 
 function renderPost(p){
@@ -460,40 +452,32 @@ function renderPost(p){
 var busy=false;
 function setBusy(v){busy=v;document.getElementById('login-btn').disabled=v;document.getElementById('reg-btn').disabled=v;document.getElementById('login-btn').textContent=v?'...':'Вход';document.getElementById('reg-btn').textContent=v?'...':'Регистрация';document.getElementById('login-btn').style.opacity=v?'0.5':'1';document.getElementById('reg-btn').style.opacity=v?'0.5':'1'}
 
-function tryLogin(lg,pw,attempt){
-  fetchT(SB+'users?login=eq.'+encodeURIComponent(lg)+'&select=id,login,password',{headers:H},10000)
-  .then(function(r){return r.json()})
-  .then(function(rows){
-    if(rows&&rows.length>0){
-      if(rows[0].password===pw){
-        var uid=rows[0].id;
-        fetchT(SB+'bans?user_id=eq.'+uid+'&select=id,reason',{headers:H},10000).then(function(r){return r.json()}).then(function(bans){
-          if(bans&&bans.length>0){toast('Вы забанены: '+(bans[0].reason||''),true);setBusy(false)}
-          else{toast('Успешно.');enterApp(rows[0]);setBusy(false)}
-        }).catch(function(){enterApp(rows[0]);setBusy(false)});
-      }else{toast('Неверный пароль',true);setBusy(false)}
-    }else{toast('Аккаунт не найден',true);setBusy(false)}
-  })
-  .catch(function(e){if(attempt<2)setTimeout(function(){tryLogin(lg,pw,attempt+1)},1500);else{setBusy(false);toast('Ошибка соединения',true)}});
+function tryLogin(lg,pw){
+  api('/auth/login',{method:'POST',body:JSON.stringify({login:lg,password:pw})})
+  .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
+  .then(function(r){
+    if(!r.ok){toast(r.data.error==='banned'?'Вы забанены: '+(r.data.reason||''):(r.data.error||'Ошибка'),true);setBusy(false);return}
+    toast('Успешно.');enterApp(r.data);setBusy(false);
+  }).catch(function(){setBusy(false);toast('Ошибка соединения',true)});
 }
 
-function tryReg(lg,pw,attempt){
-  var PH={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'};
-  fetchT(SB+'users',{method:'POST',headers:PH,body:JSON.stringify({login:lg,password:pw})},10000)
-  .then(function(r){if(!r.ok){if(r.status===409)toast('Логин уже занят',true);else toast('Ошибка регистрации',true);setBusy(false);return null}
-    return fetchT(SB+'users?login=eq.'+encodeURIComponent(lg)+'&select=id,login',{headers:H},10000)}).then(function(r){return r?r.json():null})
-  .then(function(d){if(d&&d.length){toast('Зарегистрирован!');enterApp(d[0]);setBusy(false)}})
-  .catch(function(e){if(attempt<2)setTimeout(function(){tryReg(lg,pw,attempt+1)},1500);else{setBusy(false);toast('Ошибка регистрации',true)}});
+function tryReg(lg,pw){
+  api('/auth/register',{method:'POST',body:JSON.stringify({login:lg,password:pw})})
+  .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d}})})
+  .then(function(r){
+    if(!r.ok){toast(r.data.error||'Ошибка',true);setBusy(false);return}
+    toast('Зарегистрирован!');enterApp(r.data);setBusy(false);
+  }).catch(function(){setBusy(false);toast('Ошибка соединения',true)});
 }
 
 document.getElementById('login-btn').addEventListener('click',function(){
   if(busy)return;var lg=document.getElementById('login-input').value.trim(),pw=document.getElementById('password-input').value.trim();
-  if(!lg||!pw){toast('Заполни все поля',true);return}setBusy(true);tryLogin(lg,pw,0);
+  if(!lg||!pw){toast('Заполни все поля',true);return}setBusy(true);tryLogin(lg,pw);
 });
 
 document.getElementById('reg-btn').addEventListener('click',function(){
   if(busy)return;var lg=document.getElementById('login-input').value.trim(),pw=document.getElementById('password-input').value.trim();
-  if(!lg||!pw){toast('Заполни все поля',true);return}setBusy(true);tryReg(lg,pw,0);
+  if(!lg||!pw){toast('Заполни все поля',true);return}setBusy(true);tryReg(lg,pw);
 });
 
 document.getElementById('avatar-btn').addEventListener('click',function(){document.getElementById('profile-overlay').classList.add('open')});
@@ -510,7 +494,7 @@ document.getElementById('profile-save').addEventListener('click',function(){
   if(!user)return;var desc=document.getElementById('profile-desc-input').value;
   var avatarSrc=document.getElementById('profile-avatar-img').src;
   var bannerSrc=document.getElementById('banner-img').style.display==='block'?document.getElementById('banner-img').src:'';
-  function doSave(av,ba){var body={description:desc,avatar:av||'',banner:ba||''};var PH2={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'};fetch(SB+'users?id=eq.'+user.id,{method:'PATCH',headers:PH2,body:JSON.stringify(body)}).then(function(r){if(!r.ok)throw 0;user.description=desc;if(av)user.avatar=av;if(ba)user.banner=ba;userCache[user.id]=user;toast('Сохранено');document.getElementById('profile-overlay').classList.remove('open')}).catch(function(){toast('Ошибка',true)})}
+  function doSave(av,ba){api('/users/'+user.id,{method:'PATCH',body:JSON.stringify({description:desc,avatar:av||'',banner:ba||''})}).then(function(r){if(!r.ok)throw 0;user.description=desc;if(av)user.avatar=av;if(ba)user.banner=ba;userCache[user.id]=user;toast('Сохранено');document.getElementById('profile-overlay').classList.remove('open')}).catch(function(){toast('Ошибка',true)})}
   var done=0,avD='',baD='';function check(){done++;if(done===2)doSave(avD,baD)}
   if(avatarSrc&&avatarSrc.indexOf('default-avatar')===-1&&avatarSrc.indexOf('data:')===0)resizeImage(avatarSrc,120,120,0.75,function(d){avD=d;check()});else check();
   if(bannerSrc&&bannerSrc.indexOf('data:')===0)resizeImage(bannerSrc,600,200,0.75,function(d){baD=d;check()});else check();
@@ -520,7 +504,7 @@ function closeSidebar(){document.getElementById('hamburger').classList.remove('a
 document.getElementById('hamburger').addEventListener('click',function(){this.classList.toggle('active');document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('open')});
 document.getElementById('sidebar-overlay').addEventListener('click',closeSidebar);
 
-document.getElementById('sidebar-logout').addEventListener('click',function(){closeSidebar();try{localStorage.removeItem('v_user')}catch(e){}user=null;isAdmin=false;document.getElementById('panel').classList.remove('hidden');document.getElementById('pc').classList.remove('fade-out');document.getElementById('feed').classList.remove('open');document.getElementById('avatar-btn').style.display='none';document.getElementById('hamburger').style.display='none';document.getElementById('top-search').style.display='none';document.getElementById('top-search-icon').style.display='none';document.getElementById('sidebar-admin').style.display='none';document.getElementById('avatar-img').src='default-avatar.jpg';toast('Вы вышли')});
+document.getElementById('sidebar-logout').addEventListener('click',function(){closeSidebar();api('/auth/logout',{method:'POST'}).catch(function(){});user=null;isAdmin=false;document.getElementById('panel').classList.remove('hidden');document.getElementById('pc').classList.remove('fade-out');document.getElementById('feed').classList.remove('open');document.getElementById('avatar-btn').style.display='none';document.getElementById('hamburger').style.display='none';document.getElementById('top-search').style.display='none';document.getElementById('top-search-icon').style.display='none';document.getElementById('sidebar-admin').style.display='none';document.getElementById('avatar-img').src='default-avatar.jpg';toast('Вы вышли')});
 
 document.getElementById('sidebar-search').addEventListener('click',function(){closeSidebar();document.getElementById('search-panel').classList.add('open');document.getElementById('search-input').value='';document.getElementById('search-results').innerHTML='';setTimeout(function(){document.getElementById('search-input').focus()},100)});
 document.getElementById('search-close').addEventListener('click',function(){document.getElementById('search-panel').classList.remove('open')});
@@ -530,7 +514,7 @@ document.getElementById('search-input').addEventListener('input',function(){
   var q=this.value.trim(),res=document.getElementById('search-results');clearTimeout(searchTimer);
   if(!q){res.innerHTML='';return}
   searchTimer=setTimeout(function(){
-    fetch(SB+'users?login=ilike.*'+encodeURIComponent(q)+'*&select=id,login,avatar,description',{headers:H}).then(function(r){return r.json()}).then(function(rows){
+    api('/users/search?q='+encodeURIComponent(q)).then(function(r){return r.json()}).then(function(rows){
       if(!rows||!rows.length){res.innerHTML='<div class="search-empty">Ничего не найдено</div>';return}
       var h='';for(var i=0;i<rows.length;i++){var u=rows[i];var av=u.avatar&&u.avatar.indexOf('data:')===0?u.avatar:'default-avatar.jpg';h+='<div class="search-user" data-uid="'+u.id+'"><img src="'+av+'" alt=""><div class="su-info"><span class="su-login">'+u.login+'</span><span class="su-desc">'+(u.description||'Нет описания')+'</span></div></div>'}
       res.innerHTML=h;
@@ -549,12 +533,13 @@ document.getElementById('topic-search-input').addEventListener('input',function(
   var q=this.value.trim(),res=document.getElementById('topic-search-results');clearTimeout(topicTimer);
   if(!q){res.innerHTML='';return}
   topicTimer=setTimeout(function(){
-    fetch(SB+'posts?title=ilike.*'+encodeURIComponent(q)+'*&order=created_at.desc&limit=30',{headers:H}).then(function(r){return r.json()}).then(function(rows){
-      if(!rows||!rows.length){res.innerHTML='<div class="search-empty">Тем не найдено</div>';return}
-      var ids=[];for(var i=0;i<rows.length;i++)if(rows[i].user_id)ids.push(rows[i].user_id);
+    api('/posts').then(function(r){return r.json()}).then(function(rows){
+      var filtered=[];for(var i=0;i<rows.length;i++){if(rows[i].title&&rows[i].title.toLowerCase().indexOf(q.toLowerCase())!==-1)filtered.push(rows[i])}
+      if(!filtered.length){res.innerHTML='<div class="search-empty">Тем не найдено</div>';return}
+      var ids=[];for(var i=0;i<filtered.length;i++)if(filtered[i].user_id)ids.push(filtered[i].user_id);
       fetchUsers(ids,function(uMap){
-        var h='';for(var i=0;i<rows.length;i++){
-          var p=rows[i],u=uMap[p.user_id]||{};
+        var h='';for(var i=0;i<filtered.length;i++){
+          var p=filtered[i],u=uMap[p.user_id]||{};
           var catLabel=p.category==='manual'?'Мануал':'Другое';
           var preview=(p.content||'').substring(0,100);
           h+='<div class="topic-result" data-pid="'+p.id+'"><div class="tr-head"><span class="tr-user">'+(u.login||'?')+'</span><span class="tr-cat">'+catLabel+'</span></div><div class="tr-title">'+(p.title||'')+'</div><div class="tr-text">'+preview+'</div></div>';
@@ -568,55 +553,35 @@ document.getElementById('topic-search-input').addEventListener('input',function(
 });
 
 function openUserProfile(uid){
-  fetch(SB+'users?id=eq.'+uid+'&select=id,login,avatar,description,banner',{headers:H}).then(function(r){return r.json()}).then(function(rows){
-    if(!rows||!rows.length)return;
-    var u=rows[0];var isOwn=u.id===user.id;
+  api('/users/'+uid).then(function(r){return r.json()}).then(function(u){
+    if(!u||!u.id)return;
+    var isOwn=user&&u.id===user.id;
     var av=u.avatar&&u.avatar.indexOf('data:')===0?u.avatar:'default-avatar.jpg';
     var banner=u.banner&&u.banner.indexOf('data:')===0?u.banner:'';
     var card=document.getElementById('profile-view-card');
-
-    if(!isOwn){
-      fetch(SB+'logs',{method:'POST',headers:H,body:JSON.stringify({user_id:user.id,ip:'0.0.0.0',device:'view_profile:'+u.id,action:'view_profile'})}).catch(function(){});
-    }
-
+    if(!isOwn)api('/logs',{method:'POST',body:JSON.stringify({action:'view_profile',device:'view_profile:'+u.id})}).catch(function(){});
     var html='<div class="profile-banner" style="cursor:default">'+(banner?'<img src="'+banner+'" alt="">':'<span class="banner-placeholder">Баннер</span>')+'</div>';
     html+='<div class="profile-body"><div class="profile-avatar-wrap" style="cursor:default"><img src="'+av+'" alt=""></div>';
     html+='<div class="profile-login">'+u.login+'</div>';
     html+='<div class="profile-desc"><textarea rows="3" readonly style="cursor:default">'+(u.description||'Нет описания')+'</textarea></div>';
-    html+='<div class="pv-stats" id="pv-stats-'+u.id+'"></div>';
     html+='<div class="pv-posts" id="pv-posts-'+u.id+'"><div style="text-align:center;color:rgba(255,255,255,0.15);padding:20px 0;font-size:13px">Загрузка постов...</div></div>';
     html+='<div class="profile-actions">';
-    if(isOwn){
-      html+='<button class="close-btn" onclick="document.getElementById(\'profile-view-overlay\').classList.remove(\'open\')">Закрыть</button>';
-      html+='<button class="save-btn" onclick="document.getElementById(\'profile-view-overlay\').classList.remove(\'open\');document.getElementById(\'profile-overlay\').classList.add(\'open\')">Редактировать</button>';
-    }else{
-      html+='<button class="close-btn" onclick="document.getElementById(\'profile-view-overlay\').classList.remove(\'open\')">Закрыть</button>';
-      if(isAdmin)html+='<button class="del-btn" onclick="adminDeleteUser('+u.id+',\''+u.login+'\')">Удалить</button>';
-    }
+    if(isOwn){html+='<button class="close-btn" onclick="document.getElementById(\'profile-view-overlay\').classList.remove(\'open\')">Закрыть</button><button class="save-btn" onclick="document.getElementById(\'profile-view-overlay\').classList.remove(\'open\');document.getElementById(\'profile-overlay\').classList.add(\'open\')">Редактировать</button>'}
+    else{html+='<button class="close-btn" onclick="document.getElementById(\'profile-view-overlay\').classList.remove(\'open\')">Закрыть</button>';if(isAdmin)html+='<button class="del-btn" onclick="adminDeleteUser('+u.id+',\''+u.login+'\')">Удалить</button>'}
     html+='</div></div>';
     card.innerHTML=html;
     document.getElementById('profile-view-overlay').classList.add('open');
-
-    fetch(SB+'logs?action=eq.view_profile&device=eq.view_profile:'+u.id+'&select=id',{headers:H}).then(function(r){return r.json()}).then(function(logs){
-      var cnt=logs?logs.length:0;
-      var statsEl=document.getElementById('pv-stats-'+u.id);
-      if(statsEl)statsEl.innerHTML='<div class="pv-stats-inner"><span class="pv-stat"><b>'+cnt+'</b> просмотров</span></div>';
-    }).catch(function(){});
-
-    fetch(SB+'posts?user_id=eq.'+u.id+'&select=id,user_id,category,title,content,status,created_at&order=created_at.desc',{headers:H}).then(function(r){return r.json()}).then(function(posts){
-      var el=document.getElementById('pv-posts-'+u.id);
-      if(!el)return;
+    api('/posts/user/'+u.id).then(function(r){return r.json()}).then(function(posts){
+      var el=document.getElementById('pv-posts-'+u.id);if(!el)return;
       if(!posts||!posts.length){el.innerHTML='';return}
       var h='<div class="pv-posts-title">Посты: '+posts.length+'</div>';
       for(var i=0;i<posts.length;i++){
-        var p=posts[i];
-        var catLabel=p.category==='manual'?'Мануал':'Другое';
+        var p=posts[i];var catLabel=p.category==='manual'?'Мануал':'Другое';
         var statusLabel='';
         if(p.status==='approved')statusLabel='<span class="pv-status approved">Одобрено</span>';
         else if(p.status==='pending')statusLabel='<span class="pv-status pending">На модерации</span>';
         else if(p.status==='rejected')statusLabel='<span class="pv-status rejected">Отклонено</span>';
-        var preview=(p.content||'').substring(0,80);
-        if(preview.length<(p.content||'').length)preview+='...';
+        var preview=(p.content||'').substring(0,80);if(preview.length<(p.content||'').length)preview+='...';
         h+='<div class="pv-post"><div class="pv-post-head"><span class="pv-post-title">'+(p.title||'')+'</span><span class="pv-post-cat">'+catLabel+'</span>'+statusLabel+'</div><div class="pv-post-text">'+preview+'</div></div>';
       }
       el.innerHTML=h;
@@ -629,16 +594,15 @@ document.getElementById('profile-view-overlay').addEventListener('click',functio
 var currentPostId=null,currentReplyTo=null;
 function openPostView(pid){
   currentPostId=pid;currentReplyTo=null;
-  fetch(SB+'posts?id=eq.'+pid,{headers:H}).then(function(r){return r.json()}).then(function(rows){
-    if(!rows||!rows.length)return;
-    var p=rows[0];
+  api('/posts/'+pid).then(function(r){return r.json()}).then(function(p){
+    if(!p||!p.id)return;
     fetchUsers([p.user_id],function(uMap){
       var u=uMap[p.user_id]||{};
       var av=u.avatar&&u.avatar.indexOf('data:')===0?u.avatar:'default-avatar.jpg';
       var catLabel=p.category==='manual'?'Мануал':'Другое';
       var time=p.created_at?new Date(p.created_at).toLocaleString('ru'):'';
       var head=document.getElementById('pv-head');
-      head.innerHTML='<img src="'+av+'" alt="" data-uid="'+(u.id||0)+'" onclick="event.stopPropagation();openUserProfile('+u.id+')"><span class="pv-author" data-uid="'+(u.id||0)+'" onclick="event.stopPropagation();openUserProfile('+u.id+')">'+(u.login||'?')+'</span><span class="pv-cat">'+catLabel+'</span>';
+      head.innerHTML='<img src="'+av+'" alt="" onclick="event.stopPropagation();openUserProfile('+p.user_id+')"><span class="pv-author" onclick="event.stopPropagation();openUserProfile('+p.user_id+')">'+(u.login||'?')+'</span><span class="pv-cat">'+catLabel+'</span>';
       var body=document.getElementById('pv-body');
       var text=(p.content||'').replace(/(https?:\/\/[^\s]+)/g,'<a href="$1" target="_blank">$1</a>');
       var mediaHtml='';
@@ -650,19 +614,16 @@ function openPostView(pid){
       body.innerHTML='<div class="pv-title">'+(p.title||'')+'</div><div class="pv-text">'+text+'</div>'+mediaHtml+'<div class="pv-meta"><span>'+time+'</span></div>';
       document.getElementById('post-view').classList.add('open');
       document.getElementById('feed').style.display='none';
-      fetch(SB+'logs',{method:'POST',headers:H,body:JSON.stringify({user_id:user.id,ip:'0.0.0.0',device:'view_post:'+pid,action:'view_post'})}).catch(function(){});
+      api('/logs',{method:'POST',body:JSON.stringify({action:'view_post',device:''+pid})}).catch(function(){});
       loadComments(pid);
     });
   }).catch(function(){toast('Ошибка',true)});
 }
 
-document.getElementById('pv-close').addEventListener('click',function(){
-  document.getElementById('post-view').classList.remove('open');
-  document.getElementById('feed').style.display='';
-});
+document.getElementById('pv-close').addEventListener('click',function(){document.getElementById('post-view').classList.remove('open');document.getElementById('feed').style.display=''});
 
 function loadComments(pid){
-  fetch(SB+'comments?post_id=eq.'+pid+'&order=created_at.asc',{headers:H}).then(function(r){return r.json()}).then(function(rows){
+  api('/comments/'+pid).then(function(r){return r.json()}).then(function(rows){
     var el=document.getElementById('pv-comments');
     var userIds=[];for(var i=0;i<rows.length;i++)if(rows[i].user_id)userIds.push(rows[i].user_id);
     fetchUsers(userIds,function(uMap){
@@ -691,8 +652,7 @@ function renderComment(c,uMap,childMap){
   var h='<div class="pv-comment" data-cid="'+c.id+'"><img src="'+av+'" alt=""><div class="pv-comment-body"><span class="pv-comment-user">'+(u.login||'?')+'</span><span class="pv-comment-time">'+time+'</span><div class="pv-comment-text">'+escapeHtml(c.content||'')+'</div><span class="pv-comment-reply" data-reply="'+c.id+'">Ответить</span></div></div>';
   if(childMap[c.id]){
     for(var i=0;i<childMap[c.id].length;i++){
-      var ch=childMap[c.id][i];
-      var cu=uMap[ch.user_id]||{};
+      var ch=childMap[c.id][i];var cu=uMap[ch.user_id]||{};
       var cav=cu.avatar&&cu.avatar.indexOf('data:')===0?cu.avatar:'default-avatar.jpg';
       var ctime=ch.created_at?new Date(ch.created_at).toLocaleString('ru'):'';
       h+='<div class="pv-comment pv-comment-child" data-cid="'+ch.id+'"><img src="'+cav+'" alt=""><div class="pv-comment-body"><span class="pv-comment-user">'+(cu.login||'?')+'</span><span class="pv-comment-time">'+ctime+'</span><div class="pv-comment-text">'+escapeHtml(ch.content||'')+'</div></div></div>';
@@ -704,24 +664,17 @@ function renderComment(c,uMap,childMap){
 function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 
 function submitComment(pid){
-  var input=document.getElementById('pv-comment-input');
-  if(!input)return;
-  var text=input.value.trim();
-  if(!text){toast('Напишите комментарий',true);return}
-  var body={post_id:pid,user_id:user.id,content:text};
-  if(currentReplyTo)body.parent_id=currentReplyTo;
-  var PH={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=representation'};
-  fetch(SB+'comments',{method:'POST',headers:PH,body:JSON.stringify(body)}).then(function(){
-    input.value='';currentReplyTo=null;
-    var rep=document.getElementById('pv-replying');if(rep)rep.style.display='none';
-    loadComments(pid);
-    toast('Комментарий добавлен');
+  var input=document.getElementById('pv-comment-input');if(!input)return;
+  var text=input.value.trim();if(!text){toast('Напишите комментарий',true);return}
+  var body={post_id:pid,content:text};if(currentReplyTo)body.parent_id=currentReplyTo;
+  api('/comments',{method:'POST',body:JSON.stringify(body)}).then(function(){
+    input.value='';currentReplyTo=null;var rep=document.getElementById('pv-replying');if(rep)rep.style.display='none';
+    loadComments(pid);toast('Комментарий добавлен');
   }).catch(function(){toast('Ошибка',true)});
 }
 
 document.getElementById('pv-comments').addEventListener('click',function(e){
-  var btn=e.target.closest('.pv-comment-reply');
-  if(!btn)return;
+  var btn=e.target.closest('.pv-comment-reply');if(!btn)return;
   currentReplyTo=parseInt(btn.dataset.reply);
   var rep=document.getElementById('pv-replying');
   if(rep){rep.style.display='block';rep.innerHTML='Ответ на комментарий <span id="pv-cancel-reply">отмена</span>';
@@ -735,19 +688,7 @@ document.getElementById('top-search').addEventListener('keydown',function(e){if(
 
 window.adminDeleteUser=function(id,login){
   if(!confirm('Удалить пользователя '+login+' и все его посты?'))return;
-  fetch(SB+'posts?user_id=eq.'+id,{method:'DELETE',headers:H}).then(function(){
-    fetch(SB+'bans?user_id=eq.'+id,{method:'DELETE',headers:H}).then(function(){
-      fetch(SB+'logs?user_id=eq.'+id,{method:'DELETE',headers:H}).then(function(){
-        fetch(SB+'admins?user_id=eq.'+id,{method:'DELETE',headers:H}).then(function(){
-          fetch(SB+'users?id=eq.'+id,{method:'DELETE',headers:H}).then(function(){
-            document.getElementById('profile-view-overlay').classList.remove('open');
-            toast(login+' удалён');
-            loadFeed();
-          }).catch(function(){toast('Ошибка удаления',true)});
-        }).catch(function(){toast('Ошибка',true)});
-      }).catch(function(){toast('Ошибка',true)});
-    }).catch(function(){toast('Ошибка',true)});
-  }).catch(function(){toast('Ошибка',true)});
+  api('/admin/users/'+id,{method:'DELETE'}).then(function(){document.getElementById('profile-view-overlay').classList.remove('open');toast(login+' удалён');loadFeed()}).catch(function(){toast('Ошибка',true)});
 };
 
 document.getElementById('sidebar-create').addEventListener('click',function(){closeSidebar();document.getElementById('create-panel').classList.add('open');document.getElementById('cr-title').value='';document.getElementById('cr-text').value='';document.getElementById('cr-file-list').textContent='';document.getElementById('cr-file-input').value='';currentFiles=[];document.getElementById('cr-media-section').style.display='none'});
@@ -772,19 +713,13 @@ document.getElementById('cr-submit').addEventListener('click',function(){
   if(!title){toast('Укажите название',true);return}
   if(cat==='manual'){
     if(!text){toast('Напишите текст мануала',true);return}
-    var PH={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'};
-    fetch(SB+'posts',{method:'POST',headers:PH,body:JSON.stringify({user_id:user.id,category:'manual',title:title,content:text,status:'approved'})})
-    .then(function(r){if(!r.ok)throw 0;toast('Опубликовано!');document.getElementById('create-panel').classList.remove('open');loadFeed()}).catch(function(){toast('Ошибка',true)});
+    api('/posts',{method:'POST',body:JSON.stringify({category:'manual',title:title,content:text})}).then(function(r){if(!r.ok)throw 0;toast('Опубликовано!');document.getElementById('create-panel').classList.remove('open');loadFeed()}).catch(function(){toast('Ошибка',true)});
   }else{
     if(!text&&!currentFiles.length){toast('Добавьте контент',true);return}
     document.getElementById('cr-submit').disabled=true;document.getElementById('cr-submit').textContent='Загрузка...';
     var done=0,mediaUrl='',mediaType='',total=currentFiles.length||1;
-    function afterAll(){if(done<total)return;var PH={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'};fetch(SB+'posts',{method:'POST',headers:PH,body:JSON.stringify({user_id:user.id,category:'other',title:title,content:text,media:mediaUrl,media_type:mediaType,status:'pending'})}).then(function(r){if(!r.ok)throw 0;toast('Отправлено на модерацию');document.getElementById('create-panel').classList.remove('open');document.getElementById('cr-submit').disabled=false;document.getElementById('cr-submit').textContent='Опубликовать';loadFeed()}).catch(function(){toast('Ошибка',true);document.getElementById('cr-submit').disabled=false;document.getElementById('cr-submit').textContent='Опубликовать'})}
-    if(currentFiles.length){
-      var f=currentFiles[0],reader=new FileReader();
-      reader.onload=function(e){resizeImage(e.target.result,600,450,0.7,function(d){mediaUrl=d;mediaType=f.type.indexOf('video')===0?f.type:'image/webp';done++;afterAll()})};
-      reader.readAsDataURL(f);
-    }else{afterAll()}
+    function afterAll(){if(done<total)return;api('/posts',{method:'POST',body:JSON.stringify({category:'other',title:title,content:text,media:mediaUrl,media_type:mediaType})}).then(function(r){if(!r.ok)throw 0;toast('Отправлено на модерацию');document.getElementById('create-panel').classList.remove('open');document.getElementById('cr-submit').disabled=false;document.getElementById('cr-submit').textContent='Опубликовать';loadFeed()}).catch(function(){toast('Ошибка',true);document.getElementById('cr-submit').disabled=false;document.getElementById('cr-submit').textContent='Опубликовать'})}
+    if(currentFiles.length){var f=currentFiles[0],reader=new FileReader();reader.onload=function(e){resizeImage(e.target.result,600,450,0.7,function(d){mediaUrl=d;mediaType=f.type.indexOf('video')===0?f.type:'image/webp';done++;afterAll()})};reader.readAsDataURL(f)}else{afterAll()}
   }
 });
 
@@ -797,33 +732,30 @@ document.querySelectorAll('.admin-tabs button').forEach(function(btn){
 function loadAdminTab(tab){
   var el=document.getElementById('admin-content');
   if(tab==='moderation'){
-    fetch(SB+'posts?status=eq.pending&order=created_at.desc',{headers:H}).then(function(r){return r.json()}).then(function(rows){
+    api('/admin/pending').then(function(r){return r.json()}).then(function(rows){
       if(!rows||!rows.length){el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.15);font-weight:300;padding:40px 0">Нет постов на модерации</div>';return}
       var ids=[];for(var i=0;i<rows.length;i++)if(rows[i].user_id)ids.push(rows[i].user_id);
       fetchUsers(ids,function(uMap){
         var h='';for(var i=0;i<rows.length;i++){
-          var p=rows[i],u=uMap[p.user_id]||{};
-          var text=(p.content||'').substring(0,200);
+          var p=rows[i],u=uMap[p.user_id]||{};var text=(p.content||'').substring(0,200);
           h+='<div class="admin-card"><div class="ac-label">'+(u.login||'?')+' — '+p.title+'</div><div class="ac-sub">'+text+'</div><div class="ac-row"><button class="ac-btn green" onclick="adminApprove('+p.id+')">Принять</button><button class="ac-btn red" onclick="adminReject('+p.id+')">Отклонить</button></div></div>';
         }
         el.innerHTML=h;
       });
     }).catch(function(){el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.15);padding:40px 0">Ошибка</div>'});
   }else if(tab==='users'){
-    fetch(SB+'users?select=id,login,description&order=id.asc',{headers:H}).then(function(r){return r.json()}).then(function(rows){
+    api('/admin/users').then(function(r){return r.json()}).then(function(rows){
       if(!rows||!rows.length){el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.15);padding:40px 0">Нет пользователей</div>';return}
       var h='';for(var i=0;i<rows.length;i++){
-        var u=rows[i];
-        h+='<div class="admin-card"><div class="ac-label">'+u.login+'</div><div class="ac-row">';
+        var u=rows[i];h+='<div class="admin-card"><div class="ac-label">'+u.login+'</div><div class="ac-row">';
         h+='<button class="ac-btn blue" onclick="adminShowPass('+u.id+',\''+u.login+'\')">Пароль</button>';
         h+='<button class="ac-btn gray" onclick="adminToggleAdmin('+u.id+')">Админ</button>';
-        h+='<button class="ac-btn red" onclick="adminBanUser('+u.id+',\''+u.login+'\')">Бан</button>';
-        h+='</div></div>';
+        h+='<button class="ac-btn red" onclick="adminBanUser('+u.id+',\''+u.login+'\')">Бан</button></div></div>';
       }
       el.innerHTML=h;
     }).catch(function(){el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.15);padding:40px 0">Ошибка</div>'});
   }else if(tab==='bans'){
-    fetch(SB+'bans?order=created_at.desc',{headers:H}).then(function(r){return r.json()}).then(function(rows){
+    api('/admin/bans').then(function(r){return r.json()}).then(function(rows){
       if(!rows||!rows.length){el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.15);padding:40px 0">Нет банов</div>';return}
       var ids=[];for(var i=0;i<rows.length;i++)if(rows[i].user_id)ids.push(rows[i].user_id);
       fetchUsers(ids,function(uMap){
@@ -835,13 +767,12 @@ function loadAdminTab(tab){
       });
     }).catch(function(){el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.15);padding:40px 0">Ошибка</div>'});
   }else if(tab==='logs'){
-    fetch(SB+'logs?order=created_at.desc&limit=100',{headers:H}).then(function(r){return r.json()}).then(function(rows){
+    api('/admin/logs').then(function(r){return r.json()}).then(function(rows){
       if(!rows||!rows.length){el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.15);padding:40px 0">Нет логов</div>';return}
       var ids=[];for(var i=0;i<rows.length;i++)if(rows[i].user_id)ids.push(rows[i].user_id);
       fetchUsers(ids,function(uMap){
         var h='';for(var i=0;i<rows.length;i++){
-          var l=rows[i],u=uMap[l.user_id]||{};
-          var time=l.created_at?new Date(l.created_at).toLocaleString('ru'):'';
+          var l=rows[i],u=uMap[l.user_id]||{};var time=l.created_at?new Date(l.created_at).toLocaleString('ru'):'';
           h+='<div class="admin-card"><div class="ac-label">'+(u.login||'?')+' — '+l.action+'</div><div class="ac-sub">'+l.device+'</div><div class="ac-sub">'+time+'</div></div>';
         }
         el.innerHTML=h;
@@ -851,39 +782,33 @@ function loadAdminTab(tab){
 }
 
 window.adminApprove=function(id){
-  fetch(SB+'posts?id=eq.'+id,{method:'PATCH',headers:H,body:JSON.stringify({status:'approved',moderator_id:user.id})}).then(function(){loadAdminTab('moderation');toast('Принято')}).catch(function(){toast('Ошибка',true)});
+  api('/admin/posts/'+id,{method:'PATCH',body:JSON.stringify({status:'approved'})}).then(function(){loadAdminTab('moderation');toast('Принято')}).catch(function(){toast('Ошибка',true)});
 };
 window.adminReject=function(id){
-  var reason=prompt('Причина отклонения:');
-  if(reason===null)return;
-  fetch(SB+'posts?id=eq.'+id,{method:'PATCH',headers:H,body:JSON.stringify({status:'rejected',moderator_id:user.id,reject_reason:reason})}).then(function(){loadAdminTab('moderation');toast('Отклонено')}).catch(function(){toast('Ошибка',true)});
+  var reason=prompt('Причина отклонения:');if(reason===null)return;
+  api('/admin/posts/'+id,{method:'PATCH',body:JSON.stringify({status:'rejected',reason:reason})}).then(function(){loadAdminTab('moderation');toast('Отклонено')}).catch(function(){toast('Ошибка',true)});
 };
 window.adminShowPass=function(id,login){
-  fetch(SB+'users?id=eq.'+id+'&select=password',{headers:H}).then(function(r){return r.json()}).then(function(rows){if(rows&&rows.length)alert(login+': '+rows[0].password)}).catch(function(){toast('Ошибка',true)});
+  api('/admin/users/'+id+'/password').then(function(r){return r.json()}).then(function(d){if(d)alert(login+': '+d.password)}).catch(function(){toast('Ошибка',true)});
 };
 window.adminToggleAdmin=function(id){
-  fetch(SB+'admins?user_id=eq.'+id,{headers:H}).then(function(r){return r.json()}).then(function(rows){
-    if(rows&&rows.length>0){fetch(SB+'admins?user_id=eq.'+id,{method:'DELETE',headers:H}).then(function(){loadAdminTab('users');toast('Админка снята')})}
-    else{fetch(SB+'admins',{method:'POST',headers:H,body:JSON.stringify({user_id:id})}).then(function(){loadAdminTab('users');toast('Админка выдана')})}
+  api('/admin/admins',{method:'POST',body:JSON.stringify({user_id:id})}).then(function(r){return r.json()}).then(function(d){
+    if(d.error==='removed'){loadAdminTab('users');toast('Админка снята')}
+    else{loadAdminTab('users');toast('Админка выдана')}
   }).catch(function(){toast('Ошибка',true)});
 };
 window.adminBanUser=function(id,login){
-  fetch(SB+'admins?user_id=eq.'+id,{headers:H}).then(function(r){return r.json()}).then(function(rows){
-    if(rows&&rows.length>0){toast('Нельзя банить админов',true);return}
-    var reason=prompt('Причина бана '+login+':');
-    if(reason===null)return;
-    fetch(SB+'bans',{method:'POST',headers:H,body:JSON.stringify({user_id:id,reason:reason})}).then(function(){loadAdminTab('users');toast(login+' забанен')}).catch(function(){toast('Ошибка',true)});
-  }).catch(function(){
-    var reason=prompt('Причина бана '+login+':');
-    if(reason===null)return;
-    fetch(SB+'bans',{method:'POST',headers:H,body:JSON.stringify({user_id:id,reason:reason})}).then(function(){loadAdminTab('users');toast(login+' забанен')}).catch(function(){toast('Ошибка',true)});
-  });
+  var reason=prompt('Причина бана '+login+':');if(reason===null)return;
+  api('/admin/bans',{method:'POST',body:JSON.stringify({user_id:id,reason:reason})}).then(function(r){return r.json()}).then(function(d){
+    if(d.error){toast(d.error,true);return}
+    loadAdminTab('users');toast(login+' забанен');
+  }).catch(function(){toast('Ошибка',true)});
 };
 window.adminUnban=function(id){
-  fetch(SB+'bans?id=eq.'+id,{method:'DELETE',headers:H}).then(function(){loadAdminTab('bans');toast('Разбанен')}).catch(function(){toast('Ошибка',true)});
+  api('/admin/bans/'+id,{method:'DELETE'}).then(function(){loadAdminTab('bans');toast('Разбанен')}).catch(function(){toast('Ошибка',true)});
 };
 
-try{var saved=localStorage.getItem('v_user');if(saved){var sv=JSON.parse(saved);if(sv&&sv.login&&sv.password){fetchT(SB+'users?login=eq.'+encodeURIComponent(sv.login)+'&select=id,login,password',{headers:H},10000).then(function(r){return r.json()}).then(function(rows){if(rows&&rows.length>0&&rows[0].password===sv.password){enterApp(rows[0])}}).catch(function(){})}}}catch(e){}
+api('/auth/me').then(function(r){if(!r.ok)return;return r.json()}).then(function(u){if(u)enterApp(u)}).catch(function(){});
 })();
 </script>
 
