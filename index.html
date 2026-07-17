@@ -393,7 +393,7 @@ function fetchUsers(ids,callback){
   var unique=[];for(var i=0;i<ids.length;i++){if(ids[i]&&!userCache[ids[i]])unique.push(ids[i])}
   if(!unique.length){var out={};for(var i=0;i<ids.length;i++)out[ids[i]]=userCache[ids[i]]||null;callback(out);return}
   var q='id=in.('+unique.join(',')+')&select=id,login,avatar,description';
-  fetchT(SB+'users?'+q,{headers:H},15000).then(function(r){return r.json()}).then(function(rows){
+  fetch(SB+'users?'+q,{headers:H}).then(function(r){return r.json()}).then(function(rows){
     if(rows)for(var i=0;i<rows.length;i++)userCache[rows[i].id]=rows[i];
     var out={};for(var i=0;i<ids.length;i++)out[ids[i]]=userCache[ids[i]]||null;
     callback(out);
@@ -426,8 +426,8 @@ function enterApp(u){
 function checkAdmin(){fetch(SB+'admins?user_id=eq.'+user.id,{headers:H}).then(function(r){return r.json()}).then(function(rows){isAdmin=rows&&rows.length>0;document.getElementById('sidebar-admin').style.display=isAdmin?'flex':'none'}).catch(function(){})}
 
 function loadFeed(){
-  fetchT(SB+'posts?status=eq.approved&select=id,user_id,category,title,content,status,created_at,media_type&order=created_at.desc&limit=50',{headers:H},15000)
-  .then(function(r){return r.json()})
+  fetch(SB+'posts?status=eq.approved&select=id,user_id,category,title,content,status,created_at,media_type&order=created_at.desc&limit=50',{headers:H})
+  .then(function(r){if(!r.ok)throw new Error(r.status);return r.json()})
   .then(function(rows){
     var el=document.getElementById('feed-inner');
     if(!rows||!rows.length){el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.15);font-weight:300;padding:60px 0">Пока нет постов</div>';return}
@@ -436,7 +436,7 @@ function loadFeed(){
       el.innerHTML='';
       for(var i=0;i<rows.length;i++){rows[i]._user=uMap[rows[i].user_id]||null;el.appendChild(renderPost(rows[i]))}
     });
-  }).catch(function(){var el=document.getElementById('feed-inner');el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.2);font-weight:300;padding:60px 0">Ошибка загрузки. <span style="cursor:pointer;text-decoration:underline" onclick="location.reload()">Обновить</span></div>'});
+  }).catch(function(){var el=document.getElementById('feed-inner');el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.2);font-weight:300;padding:60px 0">Ошибка загрузки. <span style="cursor:pointer;text-decoration:underline" onclick="loadFeed()">Обновить</span></div>'});
 }
 
 function renderPost(p){
@@ -478,7 +478,7 @@ function tryLogin(lg,pw,attempt){
 }
 
 function tryReg(lg,pw,attempt){
-  var PH={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=minimal'};
+  var PH={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'};
   fetchT(SB+'users',{method:'POST',headers:PH,body:JSON.stringify({login:lg,password:pw})},10000)
   .then(function(r){if(!r.ok){if(r.status===409)toast('Логин уже занят',true);else toast('Ошибка регистрации',true);setBusy(false);return null}
     return fetchT(SB+'users?login=eq.'+encodeURIComponent(lg)+'&select=id,login',{headers:H},10000)}).then(function(r){return r?r.json():null})
@@ -510,7 +510,7 @@ document.getElementById('profile-save').addEventListener('click',function(){
   if(!user)return;var desc=document.getElementById('profile-desc-input').value;
   var avatarSrc=document.getElementById('profile-avatar-img').src;
   var bannerSrc=document.getElementById('banner-img').style.display==='block'?document.getElementById('banner-img').src:'';
-  function doSave(av,ba){var body={description:desc,avatar:av||'',banner:ba||''};var PH2={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=minimal'};fetch(SB+'users?id=eq.'+user.id,{method:'PATCH',headers:PH2,body:JSON.stringify(body)}).then(function(r){if(!r.ok)throw 0;user.description=desc;if(av)user.avatar=av;if(ba)user.banner=ba;userCache[user.id]=user;toast('Сохранено');document.getElementById('profile-overlay').classList.remove('open')}).catch(function(){toast('Ошибка',true)})}
+  function doSave(av,ba){var body={description:desc,avatar:av||'',banner:ba||''};var PH2={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'};fetch(SB+'users?id=eq.'+user.id,{method:'PATCH',headers:PH2,body:JSON.stringify(body)}).then(function(r){if(!r.ok)throw 0;user.description=desc;if(av)user.avatar=av;if(ba)user.banner=ba;userCache[user.id]=user;toast('Сохранено');document.getElementById('profile-overlay').classList.remove('open')}).catch(function(){toast('Ошибка',true)})}
   var done=0,avD='',baD='';function check(){done++;if(done===2)doSave(avD,baD)}
   if(avatarSrc&&avatarSrc.indexOf('default-avatar')===-1&&avatarSrc.indexOf('data:')===0)resizeImage(avatarSrc,120,120,0.75,function(d){avD=d;check()});else check();
   if(bannerSrc&&bannerSrc.indexOf('data:')===0)resizeImage(bannerSrc,600,200,0.75,function(d){baD=d;check()});else check();
@@ -772,14 +772,14 @@ document.getElementById('cr-submit').addEventListener('click',function(){
   if(!title){toast('Укажите название',true);return}
   if(cat==='manual'){
     if(!text){toast('Напишите текст мануала',true);return}
-    var PH={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=minimal'};
+    var PH={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'};
     fetch(SB+'posts',{method:'POST',headers:PH,body:JSON.stringify({user_id:user.id,category:'manual',title:title,content:text,status:'approved'})})
     .then(function(r){if(!r.ok)throw 0;toast('Опубликовано!');document.getElementById('create-panel').classList.remove('open');loadFeed()}).catch(function(){toast('Ошибка',true)});
   }else{
     if(!text&&!currentFiles.length){toast('Добавьте контент',true);return}
     document.getElementById('cr-submit').disabled=true;document.getElementById('cr-submit').textContent='Загрузка...';
     var done=0,mediaUrl='',mediaType='',total=currentFiles.length||1;
-    function afterAll(){if(done<total)return;var PH={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=minimal'};fetch(SB+'posts',{method:'POST',headers:PH,body:JSON.stringify({user_id:user.id,category:'other',title:title,content:text,media:mediaUrl,media_type:mediaType,status:'pending'})}).then(function(r){if(!r.ok)throw 0;toast('Отправлено на модерацию');document.getElementById('create-panel').classList.remove('open');document.getElementById('cr-submit').disabled=false;document.getElementById('cr-submit').textContent='Опубликовать';loadFeed()}).catch(function(){toast('Ошибка',true);document.getElementById('cr-submit').disabled=false;document.getElementById('cr-submit').textContent='Опубликовать'})}
+    function afterAll(){if(done<total)return;var PH={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json'};fetch(SB+'posts',{method:'POST',headers:PH,body:JSON.stringify({user_id:user.id,category:'other',title:title,content:text,media:mediaUrl,media_type:mediaType,status:'pending'})}).then(function(r){if(!r.ok)throw 0;toast('Отправлено на модерацию');document.getElementById('create-panel').classList.remove('open');document.getElementById('cr-submit').disabled=false;document.getElementById('cr-submit').textContent='Опубликовать';loadFeed()}).catch(function(){toast('Ошибка',true);document.getElementById('cr-submit').disabled=false;document.getElementById('cr-submit').textContent='Опубликовать'})}
     if(currentFiles.length){
       var f=currentFiles[0],reader=new FileReader();
       reader.onload=function(e){resizeImage(e.target.result,600,450,0.7,function(d){mediaUrl=d;mediaType=f.type.indexOf('video')===0?f.type:'image/webp';done++;afterAll()})};
