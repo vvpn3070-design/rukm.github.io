@@ -1,5 +1,5 @@
 var express=require('express'),pg=require('pg'),crypto=require('crypto'),cookieParser=require('cookie-parser'),cors=require('cors');
-var app=express(),pool=new pg.Pool({connectionString:process.env.DATABASE_URL,ssl:{rejectUnauthorized:false}});
+var app=express(),pool=new pg.Pool({connectionString:(process.env.DATABASE_URL||'').replace(/:5432/,':6543'),ssl:{rejectUnauthorized:false},max:3,idleTimeoutMillis:5000});
 var FRONTEND=process.env.FRONTEND_URL||'*';
 app.use(express.json({limit:'12mb'}));
 app.use(cookieParser());
