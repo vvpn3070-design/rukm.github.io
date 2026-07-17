@@ -148,7 +148,7 @@ app.patch('/api/users/:id',authMiddleware,function(req,res){
   for(var k in body){sets.push(k+'=$'+i);vals.push(body[k]);i++}
   if(!sets.length)return res.json({ok:true});
   vals.push(req.userId);
-  pool.query('UPDATE users SET '+sets.join(',')+' WHERE id=$1 RETURNING id,login,avatar,description,banner',vals).then(function(r){res.json(r.rows[0]||{ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
+  pool.query('UPDATE users SET '+sets.join(',')+' WHERE id=$1',vals).then(function(){res.json({ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
 });
 
 app.get('/api/admin/pending',authMiddleware,adminOnly,function(req,res){
