@@ -136,18 +136,17 @@ app.get('/api/users/search',optionalAuth,function(req,res){
 });
 
 app.get('/api/users/:id',optionalAuth,function(req,res){
-  if(req.userId&&req.userId!=parseInt(req.params.id)){
-    pool.query('INSERT INTO profile_views(profile_user_id,viewer_user_id) VALUES($1,$2) ON CONFLICT DO NOTHING',[parseInt(req.params.id),req.userId]).then(function(){
-      pool.query('UPDATE users SET views=(SELECT COUNT(*) FROM profile_views WHERE profile_user_id=$1) WHERE id=$1',[parseInt(req.params.id)]).catch(function(){});
-    }).catch(function(){});
-  }else if(!req.userId){
-    pool.query('INSERT INTO profile_views(profile_user_id,viewer_user_id) VALUES($1,0) ON CONFLICT DO NOTHING',[parseInt(req.params.id)]).then(function(){
-      pool.query('UPDATE users SET views=(SELECT COUNT(*) FROM profile_views WHERE profile_user_id=$1) WHERE id=$1',[parseInt(req.params.id)]).catch(function(){});
-    }).catch(function(){});
-  }
   pool.query('SELECT id,login,avatar,description,banner,badge,created_at,views FROM users WHERE id=$1',[req.params.id]).then(function(r){
     if(!r.rows.length)return res.status(404).json({error:'not found'});
     res.json(r.rows[0]);
+  }).catch(function(){res.status(500).json({error:'db error'})});
+});
+
+app.post('/api/users/:id/view',optionalAuth,function(req,res){
+  var uid=parseInt(req.params.id);
+  var viewer=req.userId||0;
+  pool.query('INSERT INTO profile_views(profile_user_id,viewer_user_id) VALUES($1,$2) ON CONFLICT DO NOTHING',[uid,viewer]).then(function(){
+    pool.query('UPDATE users SET views=(SELECT COUNT(*) FROM profile_views WHERE profile_user_id=$1) WHERE id=$1',[uid]).then(function(){res.json({ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
   }).catch(function(){res.status(500).json({error:'db error'})});
 });
 

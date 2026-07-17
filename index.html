@@ -98,7 +98,8 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
 .search-user img{width:36px;height:36px;border-radius:50%;object-fit:cover;background:#1a1a1a}
 .search-user .su-info{display:flex;flex-direction:column;gap:1px}
 .search-user .su-login{font-weight:600;font-size:14px}
-.user-badge{display:inline-block;width:18px;height:18px;vertical-align:middle;margin-left:4px;object-fit:contain;border-radius:3px}
+.user-badge{display:inline-block;width:18px;height:18px;vertical-align:middle;margin-left:4px;object-fit:contain}
+.pv-user-row .user-badge{width:32px;height:32px;margin-left:8px}
 .search-user .su-desc{font-weight:300;font-size:12px;color:rgba(255,255,255,0.25)}
 .search-empty{color:rgba(255,255,255,0.15);font-weight:300;font-size:14px;text-align:center;padding:40px 0}
 
@@ -597,6 +598,7 @@ function openUserProfile(uid){
     var joinStr=formatJoinDate(u.created_at);
     var views=u.views||0;
     var isFounder=u.login==='kovax';
+    api('/users/'+uid+'/view',{method:'POST'}).catch(function(){});
     var h='<div class="pv-banner'+(isFounder?' has-founder':'')+'">'+(banner?'<img src="'+banner+'" alt="">':'<span class="banner-placeholder"></span>')+'</div>';
     if(isFounder)h+='<div class="pv-founder"><span class="pv-founder-name">kovax</span> — Отец Форума</div>';
     h+='<div class="pv-avatar-wrap"><img src="'+av+'" alt=""></div>';
