@@ -409,14 +409,18 @@ function enterApp(u){
   document.getElementById('top-search').style.display='block';
   document.getElementById('top-search-icon').style.display='block';
   document.getElementById('feed').classList.add('open');
-  if(u.avatar)document.getElementById('avatar-img').src=u.avatar;
   document.getElementById('profile-login').textContent=u.login;
-  if(u.banner){document.getElementById('banner-img').src=u.banner;document.getElementById('banner-img').style.display='block';document.getElementById('banner-text').style.display='none'}
-  if(u.description)document.getElementById('profile-desc-input').value=u.description;
-  if(u.avatar)document.getElementById('profile-avatar-img').src=u.avatar;
   userCache[u.id]=u;
   try{localStorage.setItem('v_user',JSON.stringify({login:u.login,password:u.password}))}catch(e){}
   checkAdmin();loadFeed();logAction('login');
+  fetch(SB+'users?id=eq.'+u.id+'&select=id,login,avatar,description,banner',{headers:H}).then(function(r){return r.json()}).then(function(rows){
+    if(rows&&rows.length){user=rows[0];userCache[u.id]=rows[0];
+      if(u.avatar)document.getElementById('avatar-img').src=u.avatar;
+      if(user.banner){document.getElementById('banner-img').src=user.banner;document.getElementById('banner-img').style.display='block';document.getElementById('banner-text').style.display='none'}
+      if(user.description)document.getElementById('profile-desc-input').value=user.description;
+      if(user.avatar)document.getElementById('profile-avatar-img').src=user.avatar;
+    }
+  }).catch(function(){});
 }
 
 function checkAdmin(){fetch(SB+'admins?user_id=eq.'+user.id,{headers:H}).then(function(r){return r.json()}).then(function(rows){isAdmin=rows&&rows.length>0;document.getElementById('sidebar-admin').style.display=isAdmin?'flex':'none'}).catch(function(){})}
@@ -457,27 +461,29 @@ var busy=false;
 function setBusy(v){busy=v;document.getElementById('login-btn').disabled=v;document.getElementById('reg-btn').disabled=v;document.getElementById('login-btn').textContent=v?'...':'Вход';document.getElementById('reg-btn').textContent=v?'...':'Регистрация';document.getElementById('login-btn').style.opacity=v?'0.5':'1';document.getElementById('reg-btn').style.opacity=v?'0.5':'1'}
 
 function tryLogin(lg,pw,attempt){
-  fetchT(SB+'users?login=eq.'+encodeURIComponent(lg)+'&select=*',{headers:H},15000)
+  fetchT(SB+'users?login=eq.'+encodeURIComponent(lg)+'&select=id,login,password',{headers:H},5000)
   .then(function(r){return r.json()})
   .then(function(rows){
     if(rows&&rows.length>0){
       if(rows[0].password===pw){
-        fetch(SB+'bans?user_id=eq.'+rows[0].id,{headers:H}).then(function(r){return r.json()}).then(function(bans){
+        var uid=rows[0].id;
+        fetchT(SB+'bans?user_id=eq.'+uid+'&select=id,reason',{headers:H},5000).then(function(r){return r.json()}).then(function(bans){
           if(bans&&bans.length>0){toast('Вы забанены: '+(bans[0].reason||''),true);setBusy(false)}
           else{toast('Успешно.');enterApp(rows[0]);setBusy(false)}
-        }).catch(function(){toast('Успешно.');enterApp(rows[0]);setBusy(false)});
+        }).catch(function(){enterApp(rows[0]);setBusy(false)});
       }else{toast('Неверный пароль',true);setBusy(false)}
     }else{toast('Аккаунт не найден',true);setBusy(false)}
   })
-  .catch(function(e){if(e.name==='AbortError'&&attempt<2)setTimeout(function(){tryLogin(lg,pw,attempt+1)},1000);else{setBusy(false);toast('Ошибка соединения',true)}});
+  .catch(function(e){if(e.name==='AbortError'&&attempt<2)setTimeout(function(){tryLogin(lg,pw,attempt+1)},800);else{setBusy(false);toast('Ошибка соединения',true)}});
 }
 
 function tryReg(lg,pw,attempt){
-  var PH={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=representation'};
-  fetchT(SB+'users',{method:'POST',headers:PH,body:JSON.stringify({login:lg,password:pw})},15000)
-  .then(function(r){if(!r.ok){if(r.status===409)toast('Логин уже занят',true);else toast('Ошибка регистрации',true);setBusy(false);return null}return r.json()})
+  var PH={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=minimal'};
+  fetchT(SB+'users',{method:'POST',headers:PH,body:JSON.stringify({login:lg,password:pw})},5000)
+  .then(function(r){if(!r.ok){if(r.status===409)toast('Логин уже занят',true);else toast('Ошибка регистрации',true);setBusy(false);return null}
+    return fetchT(SB+'users?login=eq.'+encodeURIComponent(lg)+'&select=id,login',{headers:H},5000)}).then(function(r){return r?r.json():null})
   .then(function(d){if(d&&d.length){toast('Зарегистрирован!');enterApp(d[0]);setBusy(false)}})
-  .catch(function(e){if(e.name==='AbortError'&&attempt<2)setTimeout(function(){tryReg(lg,pw,attempt+1)},1000);else{setBusy(false);toast('Ошибка регистрации',true)}});
+  .catch(function(e){if(e.name==='AbortError'&&attempt<2)setTimeout(function(){tryReg(lg,pw,attempt+1)},800);else{setBusy(false);toast('Ошибка регистрации',true)}});
 }
 
 document.getElementById('login-btn').addEventListener('click',function(){
@@ -877,7 +883,7 @@ window.adminUnban=function(id){
   fetch(SB+'bans?id=eq.'+id,{method:'DELETE',headers:H}).then(function(){loadAdminTab('bans');toast('Разбанен')}).catch(function(){toast('Ошибка',true)});
 };
 
-try{var saved=localStorage.getItem('v_user');if(saved){var sv=JSON.parse(saved);if(sv&&sv.login&&sv.password){fetchT(SB+'users?login=eq.'+encodeURIComponent(sv.login)+'&select=*',{headers:H},15000).then(function(r){return r.json()}).then(function(rows){if(rows&&rows.length>0&&rows[0].password===sv.password){fetch(SB+'bans?user_id=eq.'+rows[0].id,{headers:H}).then(function(r){return r.json()}).then(function(bans){if(!bans||!bans.length)enterApp(rows[0])}).catch(function(){enterApp(rows[0])})}}).catch(function(){})}}}catch(e){}
+try{var saved=localStorage.getItem('v_user');if(saved){var sv=JSON.parse(saved);if(sv&&sv.login&&sv.password){fetchT(SB+'users?login=eq.'+encodeURIComponent(sv.login)+'&select=id,login,password',{headers:H},5000).then(function(r){return r.json()}).then(function(rows){if(rows&&rows.length>0&&rows[0].password===sv.password){enterApp(rows[0])}}).catch(function(){})}}}catch(e){}
 })();
 </script>
 
