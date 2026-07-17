@@ -234,6 +234,11 @@ app.delete('/api/admin/deleted-names/:name',authMiddleware,adminOnly,function(re
   pool.query('DELETE FROM deleted_names WHERE name=$1',[decodeURIComponent(req.params.name)]).then(function(){res.json({ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
 });
 
+app.put('/api/admin/badge/:uid',authMiddleware,adminOnly,function(req,res){
+  var badge=req.body.badge||'';
+  pool.query('UPDATE users SET badge=$1 WHERE id=$2',[badge,req.params.uid]).then(function(){res.json({ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
+});
+
 app.delete('/api/admin/users/:id',authMiddleware,adminOnly,function(req,res){
   var uid=parseInt(req.params.id);
   pool.query('SELECT user_id FROM admins WHERE user_id=$1',[uid]).then(function(r){
