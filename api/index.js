@@ -144,11 +144,10 @@ app.patch('/api/users/:id',authMiddleware,function(req,res){
   if(b.description!==undefined)body.description=b.description;
   if(b.avatar!==undefined)body.avatar=b.avatar;
   if(b.banner!==undefined)body.banner=b.banner;
-  var sets=[],vals=[],i=2;
+  var sets=[],vals=[req.userId],i=2;
   for(var k in body){sets.push(k+'=$'+i);vals.push(body[k]);i++}
   if(!sets.length)return res.json({ok:true});
-  vals.push(req.userId);
-  pool.query('UPDATE users SET '+sets.join(',')+' WHERE id=$1',vals).then(function(){res.json({ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
+  pool.query('UPDATE users SET '+sets.join(',')+' WHERE id=$1',vals).then(function(){res.json({ok:true})}).catch(function(e){console.error('PATCH user error',e);res.status(500).json({error:'db error'})});
 });
 
 app.get('/api/admin/pending',authMiddleware,adminOnly,function(req,res){

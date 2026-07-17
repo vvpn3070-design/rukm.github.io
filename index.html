@@ -632,7 +632,7 @@ function loadComments(pid){
     fetchUsers(userIds,function(uMap){
       var top=[];var childMap={};
       for(var i=0;i<rows.length;i++){
-        if(rows[i].parent_id){if(!childMap[rows[i].parent_id])childMap[rows[i].parent_id]=[];childMap[rows[i].parent_id].push(rows[i])}
+        if(rows[i].parent_id&&rows[i].parent_id!=='0'&&rows[i].parent_id!==0){if(!childMap[rows[i].parent_id])childMap[rows[i].parent_id]=[];childMap[rows[i].parent_id].push(rows[i])}
         else top.push(rows[i]);
       }
       var count=rows.length;
