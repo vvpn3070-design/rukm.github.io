@@ -99,7 +99,7 @@ app.post('/api/auth/logout',function(req,res){
 });
 
 app.get('/api/posts',optionalAuth,function(req,res){
-  pool.query('SELECT id,user_id,category,title,content,status,created_at,media_type FROM posts WHERE status=$1 ORDER BY created_at DESC LIMIT 50',['approved']).then(function(r){res.json(r.rows)}).catch(function(){res.status(500).json([])});
+  pool.query('SELECT id,user_id,category,title,content,status,created_at,media_type,pinned FROM posts WHERE status=$1 ORDER BY pinned DESC,created_at DESC LIMIT 50',['approved']).then(function(r){res.json(r.rows)}).catch(function(){res.status(500).json([])});
 });
 
 app.get('/api/posts/mine',authMiddleware,function(req,res){
@@ -163,6 +163,13 @@ app.patch('/api/admin/posts/:id',authMiddleware,adminOnly,function(req,res){
 app.delete('/api/admin/posts/:id',authMiddleware,adminOnly,function(req,res){
   pool.query('DELETE FROM comments WHERE post_id=$1',[req.params.id]).then(function(){
     pool.query('DELETE FROM posts WHERE id=$1',[req.params.id]).then(function(){res.json({ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
+  }).catch(function(){res.status(500).json({error:'db error'})});
+});
+
+app.put('/api/admin/posts/:id/pin',authMiddleware,adminOnly,function(req,res){
+  pool.query('UPDATE posts SET pinned=NOT pinned WHERE id=$1 RETURNING pinned',[req.params.id]).then(function(r){
+    if(!r.rows.length)return res.status(404).json({error:'not found'});
+    res.json({pinned:r.rows[0].pinned});
   }).catch(function(){res.status(500).json({error:'db error'})});
 });
 

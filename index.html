@@ -115,9 +115,14 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
 .pv-close{position:fixed;top:28px;right:28px;z-index:2;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,0.04);cursor:pointer;display:flex;align-items:center;justify-content:center}
 .pv-close:hover{background:rgba(255,255,255,0.08)}
 .pv-close svg{width:18px;height:18px;stroke:rgba(255,255,255,0.4);fill:none;stroke-width:1.5}
-.pv-banner{width:min(700px,100%);height:200px;background:#161616;border-radius:0 0 16px 16px;overflow:hidden;position:relative}
+.pv-banner{width:min(700px,100%);height:200px;background:#161616;overflow:hidden;position:relative}
+.pv-banner.has-founder{border-radius:0}
+.pv-banner:not(.has-founder){border-radius:0 0 16px 16px}
 .pv-banner img{width:100%;height:100%;object-fit:cover}
 .pv-banner .banner-placeholder{color:rgba(255,255,255,0.1);font-weight:300;font-size:13px}
+.pv-founder{width:min(700px,100%);background:linear-gradient(90deg,rgba(255,255,255,0.0),rgba(255,255,255,0.08),rgba(255,255,255,0.0));padding:10px 0;display:flex;justify-content:center;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.pv-founder-name{font-weight:900;font-size:14px;color:#fff;letter-spacing:0.5px}
+.pv-founder{font-weight:300;font-size:13px;color:rgba(255,255,255,0.5);letter-spacing:0.3px}
 .pv-avatar-wrap{width:100px;height:100px;border-radius:50%;overflow:hidden;margin-top:-50px;position:relative;border:3px solid #080808}
 .pv-avatar-wrap img{width:100%;height:100%;object-fit:cover}
 .pv-info{width:min(700px,90vw);padding-bottom:60px}
@@ -163,6 +168,7 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
 .post-card .pc-head .pc-user{font-weight:600;font-size:13px;cursor:pointer}
 .post-card .pc-head img:hover,.post-card .pc-head .pc-user:hover{opacity:0.7}
 .post-card .pc-head .pc-cat{font-size:11px;color:rgba(255,255,255,0.2);margin-left:auto;padding:3px 10px;background:rgba(255,255,255,0.04);border-radius:10px}
+.post-card .pc-head .pc-pin{font-size:10px;padding:3px 8px;border-radius:8px;background:rgba(100,160,255,0.12);color:rgba(100,160,255,0.8);font-weight:600;white-space:nowrap;letter-spacing:0.3px}
 .post-card .pc-title{font-weight:700;font-size:16px;margin-bottom:8px}
 .post-card .pc-text{font-weight:300;font-size:13px;color:rgba(255,255,255,0.6);line-height:1.6;white-space:pre-wrap;word-break:break-word}
 .post-card .pc-text a{color:rgba(100,160,255,0.8);text-decoration:none}
@@ -463,7 +469,8 @@ function renderPost(p){
   var time=p.created_at?new Date(p.created_at).toLocaleString('ru'):'';
   var reject='';
   if(p.status==='rejected'&&p.reject_reason)reject='<div class="pc-reject">Отклонено: '+p.reject_reason+'</div>';
-  d.innerHTML='<div class="pc-head"><img src="'+av+'" alt="" data-uid="'+(u.id||0)+'"><span class="pc-user" data-uid="'+(u.id||0)+'">'+(u.login||'?')+badgeImg(u)+'</span><span class="pc-cat">'+catLabel+'</span></div><div class="pc-title">'+(p.title||'')+'</div><div class="pc-text">'+preview+'</div><div class="pc-time">'+time+'</div>'+reject;
+  var pinBadge=p.pinned?'<span class="pc-pin">&#128204; Закреплено</span>':'';
+  d.innerHTML='<div class="pc-head"><img src="'+av+'" alt="" data-uid="'+(u.id||0)+'"><span class="pc-user" data-uid="'+(u.id||0)+'">'+(u.login||'?')+badgeImg(u)+'</span>'+pinBadge+'<span class="pc-cat">'+catLabel+'</span></div><div class="pc-title">'+(p.title||'')+'</div><div class="pc-text">'+preview+'</div><div class="pc-time">'+time+'</div>'+reject;
   var clickables=d.querySelectorAll('[data-uid]');
   for(var i=0;i<clickables.length;i++){clickables[i].addEventListener('click',function(e){e.stopPropagation();var uid=parseInt(this.dataset.uid);if(uid)openUserProfile(uid)})}
   d.addEventListener('click',function(e){if(e.target.closest('[data-uid]'))return;openPostView(p.id)});
@@ -584,7 +591,9 @@ function openUserProfile(uid){
     var card=document.getElementById('profile-view-card');
     var joinStr=formatJoinDate(u.created_at);
     var views=u.views||0;
-    var h='<div class="pv-banner">'+(banner?'<img src="'+banner+'" alt="">':'<span class="banner-placeholder"></span>')+'</div>';
+    var isFounder=u.login==='kovax'||u.login==='kowax';
+    var h='<div class="pv-banner'+(isFounder?' has-founder':'')+'">'+(banner?'<img src="'+banner+'" alt="">':'<span class="banner-placeholder"></span>')+'</div>';
+    if(isFounder)h+='<div class="pv-founder"><span class="pv-founder-name">Kowax</span> — Отец Форума</div>';
     h+='<div class="pv-avatar-wrap"><img src="'+av+'" alt=""></div>';
     h+='<div class="pv-info">';
     h+='<div class="pv-user-row"><span class="pv-user-login">'+escapeHtml(u.login||'')+'</span>'+badgeImg(u)+'</div>';
@@ -643,7 +652,8 @@ function openPostView(pid){
         else if(p.media_type&&p.media_type.indexOf('audio')===0)mediaHtml='<audio class="pv-media" controls src="'+p.media+'"></audio>';
         else mediaHtml='<div class="pv-media-load" onclick="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'">Показать изображение</div><img class="pv-media" src="'+p.media+'" alt="" style="display:none">';
       }
-      body.innerHTML='<div class="pv-title">'+(p.title||'')+'</div><div class="pv-text">'+text+'</div>'+mediaHtml+'<div class="pv-meta"><span>'+time+'</span>'+(isAdmin?'<span style="cursor:pointer;color:rgba(255,60,60,0.6)" onclick="adminDeletePost('+p.id+');document.getElementById(\'post-view\').classList.remove(\'open\');document.getElementById(\'feed\').style.display=\'\'">Удалить пост</span>':'')+'</div>';
+      var pinBtn=isAdmin?'<span style="cursor:pointer;color:rgba(100,160,255,0.7)" onclick="togglePinPost('+p.id+')">'+(p.pinned?'Открепить':'Закрепить')+'</span>':'';
+      body.innerHTML='<div class="pv-title">'+(p.title||'')+'</div>'+(p.pinned?'<div style="font-size:11px;color:rgba(100,160,255,0.7);font-weight:600;margin-bottom:8px">&#128204; Закреплено</div>':'')+'<div class="pv-text">'+text+'</div>'+mediaHtml+'<div class="pv-meta"><span>'+time+'</span>'+pinBtn+(isAdmin?'<span style="cursor:pointer;color:rgba(255,60,60,0.6)" onclick="adminDeletePost('+p.id+');document.getElementById(\'post-view\').classList.remove(\'open\');document.getElementById(\'feed\').style.display=\'\'">Удалить пост</span>':'')+'</div>';
       document.getElementById('post-view').classList.add('open');
       document.getElementById('feed').style.display='none';
       api('/logs',{method:'POST',body:JSON.stringify({action:'view_post',device:''+pid})}).catch(function(){});
@@ -820,6 +830,11 @@ function loadAdminTab(tab){
 window.adminDeletePost=function(id){
   if(!confirm('Удалить пост?'))return;
   api('/admin/posts/'+id,{method:'DELETE'}).then(function(){loadAdminTab('moderation');toast('Пост удалён')}).catch(function(){toast('Ошибка',true)});
+};
+window.togglePinPost=function(id){
+  api('/admin/posts/'+id+'/pin',{method:'PUT'}).then(function(r){return r.json()}).then(function(d){
+    toast(d.pinned?'Тема закреплена':'Тема откреплена');openPostView(id);loadFeed();
+  }).catch(function(){toast('Ошибка',true)});
 };
 window.adminSetBadge=function(uid){
   var inp=document.createElement('input');inp.type='file';inp.accept='image/*';
