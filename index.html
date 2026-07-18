@@ -100,6 +100,30 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
 #terms-accept.active{background:#fff;color:#000;cursor:pointer}
 #terms-accept.active:hover{transform:scale(0.98)}
 
+.report-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:50;display:none;background:rgba(0,0,0,0.85);justify-content:center;align-items:center}
+.report-overlay.open{display:flex}
+.report-card{width:min(420px,90vw);background:#111;border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:16px}
+.report-card h3{font-size:15px;font-weight:700;color:#fff;margin:0}
+.report-reasons{display:flex;flex-direction:column;gap:8px}
+.report-reason{padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.5);font-size:13px;cursor:pointer;transition:all 0.15s;border:1px solid transparent}
+.report-reason:hover{background:rgba(255,255,255,0.07)}
+.report-reason.selected{background:rgba(255,60,60,0.1);border-color:rgba(255,60,60,0.3);color:rgba(255,100,100,0.9)}
+.report-sig{background:rgba(255,255,255,0.04);border:none;border-radius:10px;padding:10px 14px;color:#fff;font-family:'Roboto',sans-serif;font-weight:300;font-size:13px;outline:none;resize:none}
+.report-sig::placeholder{color:rgba(255,255,255,0.2)}
+.report-actions{display:flex;gap:10px;justify-content:flex-end}
+.report-actions button{padding:10px 20px;border-radius:10px;border:none;font-family:'Roboto',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:transform 0.2s}
+.report-actions button:active{transform:scale(0.95)}
+.report-btn-cancel{background:none;color:rgba(255,255,255,0.3)}
+.report-btn-send{background:rgba(255,60,60,0.15);color:rgba(255,80,80,0.9)}
+.report-btn-send.active{background:rgba(255,60,60,0.25);color:rgba(255,100,100,1)}
+.report-trigger{font-size:11px;color:rgba(255,255,255,0.15);cursor:pointer;margin-left:auto}
+.report-trigger:hover{color:rgba(255,60,60,0.5)}
+.terms-check{display:flex;align-items:center;gap:10px;padding:16px 28px;border-top:1px solid rgba(255,255,255,0.06);cursor:pointer;font-size:12px;color:rgba(255,255,255,0.4);font-weight:400}
+.terms-check input[type=checkbox]{width:16px;height:16px;accent-color:#fff;cursor:pointer;flex-shrink:0}
+#terms-accept{margin:0 28px 20px;padding:12px;border:none;border-radius:12px;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);font-family:'Roboto',sans-serif;font-weight:700;font-size:13px;cursor:not-allowed;transition:all 0.2s}
+#terms-accept.active{background:#fff;color:#000;cursor:pointer}
+#terms-accept.active:hover{transform:scale(0.98)}
+
 .search-panel{position:fixed;top:0;left:0;width:100%;height:100%;z-index:45;display:none;background:rgba(0,0,0,0.94);flex-direction:column;align-items:center;padding-top:80px}
 .search-panel.open{display:flex}
 .search-panel .search-wrap{width:min(460px,90vw);position:relative}
@@ -133,14 +157,11 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
 .pv-close{position:fixed;top:28px;right:28px;z-index:2;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,0.04);cursor:pointer;display:flex;align-items:center;justify-content:center}
 .pv-close:hover{background:rgba(255,255,255,0.08)}
 .pv-close svg{width:18px;height:18px;stroke:rgba(255,255,255,0.4);fill:none;stroke-width:1.5}
-.pv-banner{width:min(700px,100%);height:200px;background:#161616;overflow:hidden;position:relative}
-.pv-banner.has-founder{border-radius:0}
-.pv-banner:not(.has-founder){border-radius:0 0 16px 16px}
+.pv-banner{width:min(700px,100%);height:200px;background:#161616;overflow:hidden;position:relative;border-radius:0 0 16px 16px}
+.pv-founder{display:flex;align-items:center;gap:6px;margin-top:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border-radius:10px;font-weight:300;font-size:12px;color:rgba(255,255,255,0.45);letter-spacing:0.3px}
+.pv-founder-name{font-weight:900;font-size:13px;color:#fff;letter-spacing:0.3px}
 .pv-banner img{width:100%;height:100%;object-fit:cover}
 .pv-banner .banner-placeholder{color:rgba(255,255,255,0.1);font-weight:300;font-size:13px}
-.pv-founder{width:min(700px,100%);background:rgba(255,255,255,0.04);padding:10px 0;display:flex;justify-content:center;align-items:center;gap:8px;border-top:1px solid rgba(255,255,255,0.08);border-bottom:1px solid rgba(255,255,255,0.08)}
-.pv-founder-name{font-weight:900;font-size:14px;color:#fff;letter-spacing:0.5px}
-.pv-founder{font-weight:300;font-size:13px;color:rgba(255,255,255,0.5);letter-spacing:0.3px}
 .pv-avatar-wrap{width:100px;height:100px;border-radius:50%;overflow:hidden;margin-top:-50px;position:relative;border:3px solid #080808}
 .pv-avatar-wrap img{width:100%;height:100%;object-fit:cover}
 .pv-info{width:min(700px,90vw);padding-bottom:60px}
@@ -369,6 +390,7 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
       <button data-tab="users">Пользователи</button>
       <button data-tab="bans">Баны</button>
       <button data-tab="deleted-names">Никы</button>
+      <button data-tab="reports">Жалобы</button>
       <button data-tab="logs">Логи</button>
     </div>
     <div id="admin-content"></div>
@@ -437,6 +459,23 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
     </div>
     <label class="terms-check"><input type="checkbox" id="terms-check"> Я ознакомлен и принимаю условия использования и политику конфиденциальности</label>
     <button id="terms-accept" disabled>Принять</button>
+  </div>
+</div>
+
+<div class="report-overlay" id="report-overlay">
+  <div class="report-card">
+    <h3>Жалоба</h3>
+    <div class="report-reasons" id="report-reasons">
+      <div class="report-reason" data-reason="Порнография / 21+ Контент">Порнография / 21+ Контент</div>
+      <div class="report-reason" data-reason="Реклама / Пиар">Реклама / Пиар</div>
+      <div class="report-reason" data-reason="Контент содержит вирус">Контент содержит вирус</div>
+      <div class="report-reason" data-reason="Другое">Другое</div>
+    </div>
+    <textarea class="report-sig" id="report-sig" rows="2" placeholder="Подпись (необязательно)"></textarea>
+    <div class="report-actions">
+      <button class="report-btn-cancel" onclick="document.getElementById('report-overlay').classList.remove('open')">Отмена</button>
+      <button class="report-btn-send" id="report-send" disabled>Отправить</button>
+    </div>
   </div>
 </div>
 
@@ -602,7 +641,7 @@ document.getElementById('reg-btn').addEventListener('click',function(){
   if(!lg||!pw){toast('Заполни все поля',true);return}setBusy(true);tryReg(lg,pw);
 });
 
-document.getElementById('avatar-btn').addEventListener('click',function(){document.getElementById('profile-overlay').classList.add('open')});
+document.getElementById('avatar-btn').addEventListener('click',function(){if(user&&user.id)openUserProfile(user.id)});
 document.getElementById('profile-close').addEventListener('click',function(){document.getElementById('profile-overlay').classList.remove('open')});
 document.getElementById('profile-overlay').addEventListener('click',function(e){if(e.target===this)this.classList.remove('open')});
 document.getElementById('avatar-wrap').addEventListener('click',function(){document.getElementById('avatar-input').click()});
@@ -691,11 +730,11 @@ function openUserProfile(uid){
     var views=u.views||0;
     var isFounder=u.login==='kovax';
     api('/users/'+uid+'/view',{method:'POST'}).catch(function(){});
-    var h='<div class="pv-banner'+(isFounder?' has-founder':'')+'">'+(banner?'<img src="'+banner+'" alt="">':'<span class="banner-placeholder"></span>')+'</div>';
-    if(isFounder)h+='<div class="pv-founder"><span class="pv-founder-name">kovax</span> — Отец Форума</div>';
+    var h='<div class="pv-banner">'+(banner?'<img src="'+banner+'" alt="">':'<span class="banner-placeholder"></span>')+'</div>';
     h+='<div class="pv-avatar-wrap"><img src="'+av+'" alt=""></div>';
     h+='<div class="pv-info">';
     h+='<div class="pv-user-row"><span class="pv-user-login">'+escapeHtml(u.login||'')+'</span>'+badgeImg(u)+'</div>';
+    if(isFounder)h+='<div class="pv-founder"><span class="pv-founder-name">Kovax</span> — является администратором нашего форума.</div>';
     if(joinStr)h+='<div class="pv-join">На форуме с '+joinStr+'</div>';
     if(u.description)h+='<div class="pv-desc">'+escapeHtml(u.description)+'</div>';
     h+='<div class="pv-stats-row"><div class="pv-stat"><div class="pv-stat-num">'+views+'</div><div class="pv-stat-label">просмотров</div></div><div class="pv-stat"><div class="pv-stat-num" id="pv-post-count-'+u.id+'">-</div><div class="pv-stat-label">постов</div></div></div>';
@@ -729,6 +768,26 @@ function openUserProfile(uid){
 window.closeProfile=function(){document.getElementById('profile-view-overlay').classList.remove('open')};
 window.openEditProfile=function(){document.getElementById('profile-overlay').classList.add('open')};
 
+var reportTargetType='',reportTargetId=0;
+window.openReport=function(type,id){
+  reportTargetType=type;reportTargetId=id;
+  document.querySelectorAll('.report-reason').forEach(function(r){r.classList.remove('selected')});
+  document.getElementById('report-sig').value='';
+  document.getElementById('report-send').disabled=true;
+  document.getElementById('report-send').classList.remove('active');
+  document.getElementById('report-overlay').classList.add('open');
+};
+document.querySelectorAll('.report-reason').forEach(function(r){
+  r.addEventListener('click',function(){document.querySelectorAll('.report-reason').forEach(function(x){x.classList.remove('selected')});this.classList.add('selected');var btn=document.getElementById('report-send');btn.disabled=false;btn.classList.add('active')});
+});
+document.getElementById('report-send').addEventListener('click',function(){
+  var sel=document.querySelector('.report-reason.selected');if(!sel)return;
+  var reason=sel.dataset.reason,sig=document.getElementById('report-sig').value.trim();
+  api('/reports',{method:'POST',body:JSON.stringify({target_type:reportTargetType,target_id:reportTargetId,reason:reason,signature:sig})}).then(function(){
+    document.getElementById('report-overlay').classList.remove('open');toast('Жалоба отправлена');
+  }).catch(function(){toast('Ошибка',true)});
+});
+
 document.getElementById('profile-view-overlay').addEventListener('click',function(e){if(e.target===this)closeProfile()});
 
 var currentPostId=null,currentReplyTo=null;
@@ -752,7 +811,7 @@ function openPostView(pid){
         else mediaHtml='<div class="pv-media-load" onclick="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'">Показать изображение</div><img class="pv-media" src="'+p.media+'" alt="" style="display:none">';
       }
       var pinBtn=isAdmin?'<span style="cursor:pointer;color:rgba(100,160,255,0.7)" onclick="togglePinPost('+p.id+')">'+(p.pinned?'Открепить':'Закрепить')+'</span>':'';
-      body.innerHTML='<div class="pv-title">'+(p.title||'')+'</div>'+(p.pinned?'<div style="font-size:11px;color:rgba(100,160,255,0.7);font-weight:600;margin-bottom:8px">&#128204; Закреплено</div>':'')+'<div class="pv-text">'+text+'</div>'+mediaHtml+'<div class="pv-meta"><span>'+time+'</span>'+pinBtn+(isAdmin?'<span style="cursor:pointer;color:rgba(255,60,60,0.6)" onclick="adminDeletePost('+p.id+');document.getElementById(\'post-view\').classList.remove(\'open\');document.getElementById(\'feed\').style.display=\'\'">Удалить пост</span>':'')+'</div>';
+      body.innerHTML='<div class="pv-title">'+(p.title||'')+'</div>'+(p.pinned?'<div style="font-size:11px;color:rgba(100,160,255,0.7);font-weight:600;margin-bottom:8px">&#128204; Закреплено</div>':'')+'<div class="pv-text">'+text+'</div>'+mediaHtml+'<div class="pv-meta"><span>'+time+'</span>'+pinBtn+(isAdmin?'<span style="cursor:pointer;color:rgba(255,60,60,0.6)" onclick="adminDeletePost('+p.id+');document.getElementById(\'post-view\').classList.remove(\'open\');document.getElementById(\'feed\').style.display=\'\'">Удалить пост</span>':'')+(user?'<span class="report-trigger" onclick="openReport(\'post\','+p.id+')">Пожаловаться</span>':'')+'</div>';
       document.getElementById('post-view').classList.add('open');
       document.getElementById('feed').style.display='none';
       api('/logs',{method:'POST',body:JSON.stringify({action:'view_post',device:''+pid})}).catch(function(){});
@@ -794,7 +853,7 @@ function renderComment(c,uMap,childMap,depth){
   var uid=c.user_id||0;
   var cls=depth===0?'pv-comment':'pv-comment pv-comment-child';
   var ml=depth>0?' style="margin-left:'+Math.min(depth,10)*28+'px;border-left:1px solid rgba(255,255,255,0.04);padding-left:10px"':'';
-  var h='<div class="'+cls+'" data-cid="'+c.id+'"'+ml+'><img src="'+av+'" alt="" data-uid="'+uid+'" style="cursor:pointer"><div class="pv-comment-body"><span class="pv-comment-user" data-uid="'+uid+'" style="cursor:pointer">'+(u.login||'?')+badgeImg(u)+'</span><span class="pv-comment-time">'+time+'</span><div class="pv-comment-text">'+escapeHtml(c.content||'')+'</div>'+(depth<10?'<span class="pv-comment-reply" data-reply="'+c.id+'">Ответить</span>':'')+'</div></div>';
+  var h='<div class="'+cls+'" data-cid="'+c.id+'"'+ml+'><img src="'+av+'" alt="" data-uid="'+uid+'" style="cursor:pointer"><div class="pv-comment-body"><span class="pv-comment-user" data-uid="'+uid+'" style="cursor:pointer">'+(u.login||'?')+badgeImg(u)+'</span><span class="pv-comment-time">'+time+'</span><div class="pv-comment-text">'+escapeHtml(c.content||'')+'</div><div style="display:flex;align-items:center;gap:12px">'+(depth<10?'<span class="pv-comment-reply" data-reply="'+c.id+'">Ответить</span>':'')+(user?'<span class="report-trigger" onclick="openReport(\'comment\','+c.id+')">Пожаловаться</span>':'')+'</div></div></div>';
   if(childMap[c.id]){
     for(var i=0;i<childMap[c.id].length;i++){
       h+=renderComment(childMap[c.id][i],uMap,childMap,depth+1);
@@ -842,6 +901,13 @@ window.adminAddDeletedName=function(){
 window.adminRemoveDeletedName=function(name){
   if(!confirm('Разрешить ник '+name+'?'))return;
   api('/admin/deleted-names/'+encodeURIComponent(name),{method:'DELETE'}).then(function(){toast(name+' разрешён');loadAdminTab('deleted-names')}).catch(function(){toast('Ошибка',true)});
+};
+window.adminOpenReportTarget=function(type,id){
+  document.getElementById('admin-panel').classList.remove('open');
+  if(type==='post')openPostView(id);
+};
+window.adminDismissReport=function(id){
+  api('/admin/reports/'+id,{method:'DELETE'}).then(function(){toast('Жалоба закрыта');loadAdminTab('reports')}).catch(function(){toast('Ошибка',true)});
 };
 
 document.getElementById('sidebar-create').addEventListener('click',function(){closeSidebar();document.getElementById('create-panel').classList.add('open');document.getElementById('cr-title').value='';document.getElementById('cr-text').value='';document.getElementById('cr-file-list').textContent='';document.getElementById('cr-file-input').value='';currentFiles=[];document.getElementById('cr-media-section').style.display='none'});
@@ -947,6 +1013,16 @@ function loadAdminTab(tab){
       for(var i=0;i<rows.length;i++){
         var n=rows[i];var time=n.banned_at?new Date(n.banned_at).toLocaleString('ru'):'';
         h+='<div class="admin-card"><div class="ac-label" style="font-weight:700">'+escapeHtml(n.name)+'</div><div class="ac-sub">'+(n.reason||'')+' — '+time+'</div><div class="ac-row"><button class="ac-btn red" onclick="adminRemoveDeletedName(\''+escapeHtml(n.name)+'\')">Разрешить</button></div></div>';
+      }
+      el.innerHTML=h;
+    }).catch(function(){el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.15);padding:40px 0">Ошибка</div>'});
+  }else if(tab==='reports'){
+    api('/admin/reports').then(function(r){return r.json()}).then(function(rows){
+      if(!rows||!rows.length){el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.15);font-weight:300;padding:40px 0">Нет жалоб</div>';return}
+      var h='';for(var i=0;i<rows.length;i++){
+        var r=rows[i];var time=r.created_at?new Date(r.created_at).toLocaleString('ru'):'';
+        var typeLabel=r.target_type==='post'?'Пост':'Комментарий';
+        h+='<div class="admin-card"><div class="ac-label">'+typeLabel+' #'+r.target_id+'</div><div class="ac-sub"><b>'+escapeHtml(r.reason)+'</b></div>'+(r.signature?'<div class="ac-sub">'+escapeHtml(r.signature)+'</div>':'')+'<div class="ac-sub">ID жалобщика: '+r.reporter_id+' — '+time+'</div><div class="ac-row"><button class="ac-btn green" onclick="adminOpenReportTarget(\''+r.target_type+'\','+r.target_id+')">Посмотреть</button><button class="ac-btn red" onclick="adminDismissReport('+r.id+')">Закрыть</button></div></div>';
       }
       el.innerHTML=h;
     }).catch(function(){el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.15);padding:40px 0">Ошибка</div>'});

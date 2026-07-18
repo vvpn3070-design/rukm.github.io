@@ -238,6 +238,20 @@ app.put('/api/admin/badge/:uid',authMiddleware,adminOnly,function(req,res){
   pool.query('UPDATE users SET badge=$1 WHERE id=$2',[badge,req.params.uid]).then(function(){res.json({ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
 });
 
+app.post('/api/reports',authMiddleware,function(req,res){
+  var type=req.body.target_type,id=req.body.target_id,reason=req.body.reason||'',sig=req.body.signature||'';
+  if(!type||!id||!reason)return res.status(400).json({error:'fields required'});
+  pool.query('INSERT INTO reports(target_type,target_id,reporter_id,reason,signature) VALUES($1,$2,$3,$4,$5)',[type,id,req.userId,reason,sig]).then(function(){res.json({ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
+});
+
+app.get('/api/admin/reports',authMiddleware,adminOnly,function(req,res){
+  pool.query('SELECT * FROM reports WHERE status=$1 ORDER BY created_at DESC',['pending']).then(function(r){res.json(r.rows)}).catch(function(){res.status(500).json([])});
+});
+
+app.delete('/api/admin/reports/:id',authMiddleware,adminOnly,function(req,res){
+  pool.query('DELETE FROM reports WHERE id=$1',[req.params.id]).then(function(){res.json({ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
+});
+
 app.delete('/api/admin/users/:id',authMiddleware,adminOnly,function(req,res){
   var uid=parseInt(req.params.id);
   pool.query('SELECT user_id FROM admins WHERE user_id=$1',[uid]).then(function(r){
