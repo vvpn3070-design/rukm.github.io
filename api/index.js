@@ -150,6 +150,7 @@ app.post('/api/users/:id/view',optionalAuth,function(req,res){
   var uid=parseInt(req.params.id);
   var viewer=req.userId||0;
   pool.query('INSERT INTO profile_views(profile_user_id,viewer_user_id) VALUES($1,$2) ON CONFLICT DO NOTHING',[uid,viewer]).then(function(){
+    if(viewer&&viewer!==uid)notify(uid,viewer,'view',0,'');
     pool.query('UPDATE users SET views=(SELECT COUNT(*) FROM profile_views WHERE profile_user_id=$1) WHERE id=$1',[uid]).then(function(){res.json({ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
   }).catch(function(){res.status(500).json({error:'db error'})});
 });
@@ -279,10 +280,47 @@ app.get('/api/comments/:postId',optionalAuth,function(req,res){
   pool.query('SELECT * FROM comments WHERE post_id=$1 ORDER BY created_at ASC',[req.params.postId]).then(function(r){res.json(r.rows)}).catch(function(){res.status(500).json([])});
 });
 
+function notify(userId,fromUserId,type,targetId,extra){
+  if(userId===fromUserId)return;
+  pool.query('INSERT INTO notifications(user_id,from_user_id,type,target_id,extra) VALUES($1,$2,$3,$4,$5)',[userId,fromUserId,type,targetId,extra||'']).catch(function(){});
+}
+
 app.post('/api/comments',authMiddleware,function(req,res){
-  var postId=req.body.post_id,content=(req.body.content||'').trim(),parentId=req.body.parent_id||0;
+  var postId=req.body.post_id,content=(req.body.content||'').trim(),parentId=parseInt(req.body.parent_id)||0;
   if(!postId||!content)return res.status(400).json({error:'fields required'});
-  pool.query('INSERT INTO comments(post_id,user_id,parent_id,content) VALUES($1,$2,$3,$4) RETURNING *',[postId,req.userId,parentId,content]).then(function(r){res.json(r.rows[0])}).catch(function(){res.status(500).json({error:'db error'})});
+  pool.query('INSERT INTO comments(post_id,user_id,parent_id,content) VALUES($1,$2,$3,$4) RETURNING *',[postId,req.userId,parentId,content]).then(function(r){
+    var c=r.rows[0];
+    if(parentId>0){
+      pool.query('SELECT user_id FROM comments WHERE id=$1',[parentId]).then(function(pr){
+        if(pr.rows.length)notify(pr.rows[0].user_id,req.userId,'reply',c.id,postId);
+      }).catch(function(){});
+      pool.query('SELECT user_id FROM posts WHERE id=$1',[postId]).then(function(pr){
+        if(pr.rows.length)notify(pr.rows[0].user_id,req.userId,'reply',c.id,postId);
+      }).catch(function(){});
+    }else{
+      pool.query('SELECT user_id FROM posts WHERE id=$1',[postId]).then(function(pr){
+        if(pr.rows.length)notify(pr.rows[0].user_id,req.userId,'comment',c.id,postId);
+      }).catch(function(){});
+    }
+    res.json(c);
+  }).catch(function(){res.status(500).json({error:'db error'})});
+});
+
+app.get('/api/notifications',authMiddleware,function(req,res){
+  pool.query('SELECT n.*,u.login as from_login,u.avatar as from_avatar FROM notifications n LEFT JOIN users u ON n.from_user_id=u.id WHERE n.user_id=$1 ORDER BY n.created_at DESC LIMIT 50',[req.userId]).then(function(r){res.json(r.rows)}).catch(function(){res.status(500).json([])});
+});
+
+app.get('/api/notifications/count',authMiddleware,function(req,res){
+  pool.query('SELECT count(*)::int as count FROM notifications WHERE user_id=$1 AND is_read=false',[req.userId]).then(function(r){res.json({count:r.rows[0].count})}).catch(function(){res.json({count:0})});
+});
+
+app.post('/api/notifications/read',authMiddleware,function(req,res){
+  var ids=req.body.ids||[];
+  if(ids.length){
+    pool.query('UPDATE notifications SET is_read=true WHERE user_id=$1 AND id=ANY($2)',[req.userId,ids]).then(function(){res.json({ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
+  }else{
+    pool.query('UPDATE notifications SET is_read=true WHERE user_id=$1',[req.userId]).then(function(){res.json({ok:true})}).catch(function(){res.status(500).json({error:'db error'})});
+  }
 });
 
 app.post('/api/logs',authMiddleware,function(req,res){
