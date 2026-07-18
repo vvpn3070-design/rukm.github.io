@@ -12,8 +12,8 @@
 @font-face{font-family:'Roboto';src:url('fonts/Roboto-Medium.ttf') format('truetype');font-weight:500}
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0a0a0a;font-family:'Roboto',sans-serif;color:#fff}
-canvas#pc{display:block;position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;transition:opacity 0.8s ease}
-canvas#pc.fade-out{opacity:0;pointer-events:none}
+canvas#pc{display:block;position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;transition:opacity 0.6s ease}
+canvas#pc.fade-out{opacity:0;pointer-events:none;display:none}
 canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none}
 body.theme-glass .post-card{background:rgba(255,255,255,0.06);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 body.theme-glass .full-panel{background:rgba(10,10,10,0.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
@@ -590,11 +590,17 @@ function enterApp(u){
   user=u;
   if(u.isAdmin){isAdmin=true;document.getElementById('sidebar-admin').style.display='flex'}
   document.getElementById('panel').classList.add('hidden');
-  document.getElementById('pc').classList.add('fade-out');
   var saved=localStorage.getItem('site_theme')||'cosmos';
   document.body.className='theme-'+saved;
-  if(saved!=='cosmos')document.body.style.background='#0a0a0a';
-  else document.body.style.background='';
+  document.body.style.background=saved==='cosmos'?'':'#0a0a0a';
+  if(saved==='cosmos'){
+    document.getElementById('pc').style.display='block';
+    document.getElementById('pc').style.opacity='1';
+    document.getElementById('pc').classList.remove('fade-out');
+  }else{
+    document.getElementById('pc').style.opacity='0';
+    setTimeout(function(){document.getElementById('pc').style.display='none'},600);
+  }
   document.getElementById('avatar-btn').style.display='block';
   document.getElementById('hamburger').style.display='flex';
   document.getElementById('top-search').style.display='block';
@@ -704,7 +710,7 @@ function closeSidebar(){document.getElementById('hamburger').classList.remove('a
 document.getElementById('hamburger').addEventListener('click',function(){this.classList.toggle('active');document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('open')});
 document.getElementById('sidebar-overlay').addEventListener('click',closeSidebar);
 
-document.getElementById('sidebar-logout').addEventListener('click',function(){closeSidebar();api('/auth/logout',{method:'POST'}).catch(function(){});user=null;isAdmin=false;document.getElementById('panel').classList.remove('hidden');document.getElementById('pc').classList.remove('fade-out');document.getElementById('feed').classList.remove('open');document.getElementById('avatar-btn').style.display='none';document.getElementById('hamburger').style.display='none';document.getElementById('top-search').style.display='none';document.getElementById('top-search-icon').style.display='none';document.getElementById('sidebar-admin').style.display='none';document.getElementById('avatar-img').src='default-avatar.jpg';toast('Вы вышли')});
+document.getElementById('sidebar-logout').addEventListener('click',function(){closeSidebar();api('/auth/logout',{method:'POST'}).catch(function(){});user=null;isAdmin=false;document.getElementById('panel').classList.remove('hidden');var pc=document.getElementById('pc');pc.style.display='block';pc.style.opacity='1';pc.classList.remove('fade-out');document.getElementById('feed').classList.remove('open');document.getElementById('avatar-btn').style.display='none';document.getElementById('hamburger').style.display='none';document.getElementById('top-search').style.display='none';document.getElementById('top-search-icon').style.display='none';document.getElementById('sidebar-admin').style.display='none';document.getElementById('avatar-img').src='default-avatar.jpg';document.body.className='';document.body.style.background='';toast('Вы вышли')});
 
 document.getElementById('sidebar-search').addEventListener('click',function(){closeSidebar();document.getElementById('search-panel').classList.add('open');document.getElementById('search-input').value='';document.getElementById('search-results').innerHTML='';setTimeout(function(){document.getElementById('search-input').focus()},100)});
 document.getElementById('search-close').addEventListener('click',function(){document.getElementById('search-panel').classList.remove('open')});
@@ -999,6 +1005,13 @@ var THEMES=[
 window.applyTheme=function(id){
   document.body.className='theme-'+id;
   document.body.style.background=id==='cosmos'?'':'#0a0a0a';
+  var pc=document.getElementById('pc');
+  if(id==='cosmos'){
+    pc.style.display='block';pc.style.opacity='1';pc.classList.remove('fade-out');
+  }else{
+    pc.style.opacity='0';
+    setTimeout(function(){pc.style.display='none'},600);
+  }
   localStorage.setItem('site_theme',id);
   document.querySelectorAll('.theme-card').forEach(function(c){c.classList.toggle('active',c.dataset.theme===id)});
 };
