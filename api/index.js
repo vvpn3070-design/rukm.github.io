@@ -138,7 +138,11 @@ app.get('/api/users/search',optionalAuth,function(req,res){
 app.get('/api/users/:id',optionalAuth,function(req,res){
   pool.query('SELECT id,login,avatar,description,banner,badge,created_at,views FROM users WHERE id=$1',[req.params.id]).then(function(r){
     if(!r.rows.length)return res.status(404).json({error:'not found'});
-    res.json(r.rows[0]);
+    var u=r.rows[0];
+    pool.query('SELECT user_id FROM admins WHERE user_id=$1',[u.id]).then(function(a){
+      u.isAdmin=a.rows.length>0;
+      res.json(u);
+    }).catch(function(){u.isAdmin=false;res.json(u)});
   }).catch(function(){res.status(500).json({error:'db error'})});
 });
 
