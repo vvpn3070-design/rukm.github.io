@@ -15,11 +15,11 @@ body{background:#0a0a0a;font-family:'Roboto',sans-serif;color:#fff}
 canvas#pc{display:block;position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;transition:opacity 0.8s ease}
 canvas#pc.fade-out{opacity:0;pointer-events:none}
 canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;pointer-events:none}
-body[data-theme="cosmos"]{background:linear-gradient(135deg,#05052e,#150030,#0a001a)!important}
-body[data-theme="glass"] .post-card{background:rgba(255,255,255,0.06);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-body[data-theme="glass"] .full-panel{background:rgba(10,10,10,0.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
-body[data-theme="glass"] .sidebar{background:rgba(10,10,10,0.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
-body[data-theme="glass"] .search-panel{background:rgba(0,0,0,0.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+body.theme-default canvas#pc.fade-out{opacity:0!important;pointer-events:none!important}
+body.theme-glass .post-card{background:rgba(255,255,255,0.06);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+body.theme-glass .full-panel{background:rgba(10,10,10,0.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+body.theme-glass .sidebar{background:rgba(10,10,10,0.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+body.theme-glass .search-panel{background:rgba(0,0,0,0.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
 
 .panel{position:fixed;top:0;left:0;width:50%;height:100%;z-index:1;display:flex;flex-direction:column;justify-content:center;padding:40px 60px}
 .panel.hidden{display:none !important}
@@ -590,7 +590,10 @@ function enterApp(u){
   user=u;
   if(u.isAdmin){isAdmin=true;document.getElementById('sidebar-admin').style.display='flex'}
   document.getElementById('panel').classList.add('hidden');
-  document.getElementById('pc').classList.add('fade-out');
+  var saved=localStorage.getItem('site_theme')||'cosmos';
+  document.body.className='theme-'+saved;
+  if(saved!=='cosmos')document.body.style.background='#0a0a0a';
+  else{document.body.style.background='';document.getElementById('pc').classList.remove('fade-out')}
   document.getElementById('avatar-btn').style.display='block';
   document.getElementById('hamburger').style.display='flex';
   document.getElementById('top-search').style.display='block';
@@ -988,18 +991,19 @@ document.getElementById('admin-content').addEventListener('click',function(e){
 });
 
 var THEMES=[
-  {id:'default',name:'Default',body:'background:#0a0a0a'},
-  {id:'cosmos',name:'Космос',body:'background:linear-gradient(135deg,#05052e,#150030,#0a001a)'},
-  {id:'glass',name:'Матовое стекло',body:'background:#0a0a0a'}
+  {id:'default',name:'Default'},
+  {id:'cosmos',name:'Космос'},
+  {id:'glass',name:'Матовое стекло'}
 ];
-function applyTheme(id){
-  document.body.setAttribute('data-theme',id);
-  var t=null;for(var i=0;i<THEMES.length;i++)if(THEMES[i].id===id)t=THEMES[i];
-  if(t&&id!=='cosmos')document.body.style.cssText=t.body;
-  else document.body.style.cssText='';
+window.applyTheme=function(id){
+  document.body.className='';
+  document.body.classList.add('theme-'+id);
+  var pc=document.getElementById('pc');
+  if(id==='default'||id==='glass'){pc.classList.add('fade-out');document.body.style.background='#0a0a0a'}
+  else if(id==='cosmos'){pc.classList.remove('fade-out');document.body.style.background=''}
   localStorage.setItem('site_theme',id);
   document.querySelectorAll('.theme-card').forEach(function(c){c.classList.toggle('active',c.dataset.theme===id)});
-}
+};
 function buildThemesGrid(){
   var el=document.getElementById('themes-grid');var h='';
   for(var i=0;i<THEMES.length;i++){
@@ -1009,9 +1013,9 @@ function buildThemesGrid(){
   el.innerHTML=h;
 }
 (function(){
-  var saved=localStorage.getItem('site_theme')||'default';
-  applyTheme(saved);
+  var saved=localStorage.getItem('site_theme')||'cosmos';
   buildThemesGrid();
+  document.querySelectorAll('.theme-card').forEach(function(c){c.classList.toggle('active',c.dataset.theme===saved)});
 })();
 document.getElementById('sidebar-themes').addEventListener('click',function(){closeSidebar();buildThemesGrid();applyTheme(localStorage.getItem('site_theme')||'default');document.getElementById('themes-panel').classList.add('open')});
 document.getElementById('themes-close').addEventListener('click',function(){document.getElementById('themes-panel').classList.remove('open')});
