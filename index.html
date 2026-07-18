@@ -83,6 +83,23 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
 .sidebar-item.logout{color:rgba(255,60,60,0.5)}
 .sidebar-item.logout:hover{background:rgba(255,60,60,0.06);color:rgba(255,60,60,0.9)}
 
+.terms-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:99;display:none;background:rgba(0,0,0,0.95);justify-content:center;align-items:center}
+.terms-overlay.open{display:flex}
+.terms-card{width:min(600px,92vw);max-height:80vh;display:flex;flex-direction:column;background:#111;border-radius:16px;border:1px solid rgba(255,255,255,0.06);padding:0}
+.terms-scroll{flex:1;overflow-y:auto;padding:28px 28px 16px;max-height:60vh}
+.terms-scroll::-webkit-scrollbar{width:4px}
+.terms-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+.terms-scroll h2{font-size:16px;font-weight:900;color:#fff;margin:0 0 16px}
+.terms-scroll h3{font-size:13px;font-weight:700;color:rgba(255,255,255,0.6);margin:16px 0 8px}
+.terms-scroll p{font-size:12px;font-weight:300;color:rgba(255,255,255,0.4);line-height:1.6;margin:0 0 6px}
+.terms-scroll ul{margin:0 0 8px 16px;padding:0}
+.terms-scroll ul li{font-size:12px;font-weight:300;color:rgba(255,255,255,0.4);line-height:1.6;margin-bottom:4px}
+.terms-check{display:flex;align-items:center;gap:10px;padding:16px 28px;border-top:1px solid rgba(255,255,255,0.06);cursor:pointer;font-size:12px;color:rgba(255,255,255,0.4);font-weight:400}
+.terms-check input[type=checkbox]{width:16px;height:16px;accent-color:#fff;cursor:pointer;flex-shrink:0}
+#terms-accept{margin:0 28px 20px;padding:12px;border:none;border-radius:12px;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);font-family:'Roboto',sans-serif;font-weight:700;font-size:13px;cursor:not-allowed;transition:all 0.2s}
+#terms-accept.active{background:#fff;color:#000;cursor:pointer}
+#terms-accept.active:hover{transform:scale(0.98)}
+
 .search-panel{position:fixed;top:0;left:0;width:100%;height:100%;z-index:45;display:none;background:rgba(0,0,0,0.94);flex-direction:column;align-items:center;padding-top:80px}
 .search-panel.open{display:flex}
 .search-panel .search-wrap{width:min(460px,90vw);position:relative}
@@ -358,6 +375,72 @@ canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100
   </div>
 </div>
 
+<div class="terms-overlay" id="terms-overlay">
+  <div class="terms-card">
+    <div class="terms-scroll">
+      <h2>TERMS OF SERVICE (УСЛОВИЯ ИСПОЛЬЗОВАНИЯ)</h2>
+      <h3>1. Общие положения</h3>
+      <p>1.1. Настоящий документ регулирует отношения между Администрацией Сайта и Пользователем.</p>
+      <p>1.2. Используя Сайт, Пользователь безоговорочно принимает все условия настоящего Соглашения.</p>
+      <p>1.3. Администрация оставляет за собой право изменять условия Соглашения без предварительного уведомления.</p>
+      <h3>2. Статус Администрации</h3>
+      <p>2.1. Администрация предоставляет исключительно техническую платформу для обмена информацией между Пользователями.</p>
+      <p>2.2. Администрация не является автором, издателем, модератором или распространителем контента, размещаемого Пользователями.</p>
+      <p>2.3. Администрация не осуществляет предварительную проверку размещаемого контента и не несет ответственности за его содержание.</p>
+      <h3>3. Обязанности Пользователя</h3>
+      <p>3.1. Пользователь обязуется не размещать на Сайте:</p>
+      <ul>
+        <li>Персональные данные третьих лиц без их письменного согласия.</li>
+        <li>Материалы, нарушающие авторские и смежные права.</li>
+        <li>Программное обеспечение, заведомо содержащее вредоносный код.</li>
+        <li>Материалы, пропагандирующие насилие, терроризм, межнациональную рознь.</li>
+        <li>Детскую порнографию и любые материалы сексуального характера с участием несовершеннолетних.</li>
+      </ul>
+      <p>3.2. Пользователь несет единоличную полную ответственность за любой размещаемый им контент.</p>
+      <p>3.3. Пользователь обязуется самостоятельно урегулировать любые претензии третьих лиц, связанные с размещенным им контентом.</p>
+      <p>3.4. Пользователь обязуется возместить Администрации любые убытки, штрафы и судебные издержки, возникшие в связи с нарушением Пользователем настоящего Соглашения или действующего законодательства.</p>
+      <h3>4. Программное обеспечение</h3>
+      <p>4.1. Любое программное обеспечение, доступное для загрузки с Сайта, предоставляется "как есть" (as is).</p>
+      <p>4.2. Все файлы предназначены исключительно для ознакомительных, образовательных и исследовательских целей.</p>
+      <p>4.3. Пользователь осознает, что запуск любого ПО осуществляется на его собственный страх и риск.</p>
+      <p>4.4. Администрация не проводит экспертизу размещаемого ПО, не гарантирует его работоспособность и безопасность.</p>
+      <p>4.5. Администрация не несет ответственности за любой ущерб, причиненный использованием или невозможностью использования ПО, полученного через Сайт.</p>
+      <h3>5. Отказ от ответственности</h3>
+      <p>5.1. Сайт предоставляется на условиях "как есть". Администрация не дает никаких гарантий его бесперебойной работы.</p>
+      <p>5.2. Администрация не несет ответственности за любой прямой или косвенный ущерб, возникший в результате использования или невозможности использования Сайта.</p>
+      <p>5.3. Администрация не несет ответственности за действия Пользователей, включая незаконные.</p>
+      <h3>6. Рассмотрение жалоб</h3>
+      <p>6.1. Администрация рассматривает жалобы на контент, нарушающий законодательство Нидерландов и Европейского Союза.</p>
+      <p>6.2. Для подачи жалобы необходимо направить уведомление на электронную почту, указанную на Сайте.</p>
+      <p>6.3. Администрация обязуется рассмотреть жалобу и принять решение об удалении контента в течение 72 часов.</p>
+      <p>6.4. При получении обоснованной жалобы Администрация оставляет за собой право удалить контент без объяснения причин и без предварительного уведомления Пользователя.</p>
+
+      <h2>PRIVACY POLICY (ПОЛИТИКА КОНФИДЕНЦИАЛЬНОСТИ)</h2>
+      <h3>1. Сбор информации</h3>
+      <p>1.1. Администрация не требует регистрации и не собирает персональные данные Пользователей (имя, адрес, телефон, паспортные данные).</p>
+      <p>1.2. Администрация не ведет логирование IP-адресов Пользователей.</p>
+      <p>1.3. Администрация использует исключительно технические файлы cookie, необходимые для функционирования Сайта (аутентификация Пользователя, функция "Запомнить меня"). Данные файлы не используются для отслеживания активности Пользователя за пределами Сайта, не передаются третьим лицам и не применяются в рекламных целях.</p>
+      <p>1.4. Администрация не использует сервисы веб-аналитики, передающие данные третьим лицам.</p>
+      <p>1.5. Единственная информация, которая может быть временно обработана — это технические данные, необходимые для установления и поддержания сетевого соединения (технические логи веб-сервера). Эти данные не сохраняются и удаляются автоматически.</p>
+      <h3>2. Публичный контент</h3>
+      <p>2.1. Любая информация, добровольно размещенная Пользователем в публичных разделах Сайта, становится общедоступной.</p>
+      <p>2.2. Администрация не несет ответственности за копирование и дальнейшее распространение этой информации третьими лицами.</p>
+      <p>2.3. Пользователь осознает, что размещение своих персональных данных или персональных данных третьих лиц осуществляется им на собственный риск.</p>
+      <h3>3. Безопасность</h3>
+      <p>3.1. Администрация принимает разумные технические меры для защиты целостности Сайта от несанкционированного доступа.</p>
+      <p>3.2. Администрация не может гарантировать абсолютную безопасность передаваемых данных в сети Интернет.</p>
+      <h3>4. Раскрытие информации третьим лицам</h3>
+      <p>4.1. Администрация не продает, не обменивает и не передает персональные данные третьим лицам.</p>
+      <p>4.2. Администрация может раскрыть информацию исключительно в случаях, прямо предусмотренных законодательством Нидерландов и Европейского Союза, на основании законного запроса уполномоченных государственных органов.</p>
+      <h3>5. Изменения в Политике</h3>
+      <p>5.1. Администрация оставляет за собой право вносить изменения в Политику конфиденциальности.</p>
+      <p>5.2. Новая редакция Политики вступает в силу с момента ее публикации на Сайте.</p>
+    </div>
+    <label class="terms-check"><input type="checkbox" id="terms-check"> Я ознакомлен и принимаю условия использования и политику конфиденциальности</label>
+    <button id="terms-accept" disabled>Принять</button>
+  </div>
+</div>
+
 <div class="profile-overlay" id="profile-overlay">
   <div class="profile-card">
     <div class="profile-banner" id="banner-wrap">
@@ -423,6 +506,15 @@ function fetchUsers(ids,callback){
   })(unique[i])}
 }
 
+function showTerms(){
+  document.getElementById('terms-overlay').classList.add('open');
+  var check=document.getElementById('terms-check');
+  var btn=document.getElementById('terms-accept');
+  check.checked=false;btn.disabled=true;btn.classList.remove('active');
+  check.onchange=function(){btn.disabled=!check.checked;if(check.checked)btn.classList.add('active');else btn.classList.remove('active')};
+  btn.onclick=function(){if(check.checked){localStorage.setItem('terms_accepted','1');document.getElementById('terms-overlay').classList.remove('open');toast('Условия приняты')}}
+}
+
 function enterApp(u){
   user=u;
   if(u.isAdmin){isAdmin=true;document.getElementById('sidebar-admin').style.display='flex'}
@@ -436,6 +528,7 @@ function enterApp(u){
   document.getElementById('profile-login').textContent=u.login;
   userCache[u.id]=u;
   checkAdmin();loadFeed();logAction('login');
+  if(!localStorage.getItem('terms_accepted')){showTerms()}
   api('/users/'+u.id).then(function(r){return r.json()}).then(function(u2){
     if(u2){user=u2;userCache[u2.id]=u2;
       if(u2.avatar)document.getElementById('avatar-img').src=u2.avatar;
