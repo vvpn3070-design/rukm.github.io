@@ -771,13 +771,13 @@ function openUserProfile(uid){
     var card=document.getElementById('profile-view-card');
     var joinStr=formatJoinDate(u.created_at);
     var views=u.views||0;
-    var isFounder=u.login==='kovax';
+    var isFounder=u.isAdmin;
     api('/users/'+uid+'/view',{method:'POST'}).catch(function(){});
     var h='<div class="pv-banner">'+(banner?'<img src="'+banner+'" alt="">':'<span class="banner-placeholder"></span>')+'</div>';
     h+='<div class="pv-avatar-wrap"><img src="'+av+'" alt=""></div>';
     h+='<div class="pv-info">';
     h+='<div class="pv-user-row"><span class="pv-user-login">'+escapeHtml(u.login||'')+'</span>'+badgeImg(u)+'</div>';
-    if(isFounder)h+='<div class="pv-founder"><span class="pv-founder-name">Kovax</span> — является администратором нашего форума.</div>';
+    if(isFounder)h+='<div class="pv-founder"><span class="pv-founder-name">'+u.login+'</span> — является администратором нашего форума.</div>';
     if(joinStr)h+='<div class="pv-join">На форуме с '+joinStr+'</div>';
     if(u.description)h+='<div class="pv-desc">'+escapeHtml(u.description)+'</div>';
     h+='<div class="pv-stats-row"><div class="pv-stat"><div class="pv-stat-num">'+views+'</div><div class="pv-stat-label">просмотров</div></div><div class="pv-stat"><div class="pv-stat-num" id="pv-post-count-'+u.id+'">-</div><div class="pv-stat-label">постов</div></div></div>';
