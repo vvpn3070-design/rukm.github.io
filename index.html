@@ -13,31 +13,16 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#060610;font-family:'Roboto',sans-serif;color:#fff}
 .glass-bg{position:fixed;inset:0;z-index:0;overflow:hidden;background:#0a0a0a}
-.glass-bg .orb{position:absolute;border-radius:50%;filter:blur(90px);animation:orbFloat 25s ease-in-out infinite}
-.glass-bg .orb:nth-child(1){width:500px;height:500px;background:rgba(255,255,255,0.08);top:-5%;left:5%}
-.glass-bg .orb:nth-child(2){width:400px;height:400px;background:rgba(255,255,255,0.06);top:50%;right:10%;animation-delay:-8s}
-.glass-bg .orb:nth-child(3){width:350px;height:350px;background:rgba(255,255,255,0.05);bottom:5%;left:35%;animation-delay:-14s}
-@keyframes orbFloat{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-25px)}}
-.glass-bg .glass-panel{position:absolute;border-radius:20px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);overflow:hidden}
-.glass-bg .glass-panel::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:conic-gradient(from 0deg,transparent,rgba(255,255,255,0.03),transparent,rgba(255,255,255,0.02),transparent);animation:glassShine 8s linear infinite;pointer-events:none}
-.glass-bg .glass-panel::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.04) 0%,transparent 50%,rgba(255,255,255,0.02) 100%);pointer-events:none}
-@keyframes glassShine{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-.glass-bg .gp1{width:320px;height:220px;top:8%;left:50%;transform:translateX(-50%) rotate(-3deg);animation:gpFloat1 20s ease-in-out infinite}
-.glass-bg .gp2{width:260px;height:180px;top:30%;left:8%;transform:rotate(5deg);animation:gpFloat2 24s ease-in-out infinite}
-.glass-bg .gp3{width:240px;height:160px;top:20%;right:8%;transform:rotate(-2deg);animation:gpFloat1 22s ease-in-out infinite;animation-delay:-6s}
-.glass-bg .gp4{width:300px;height:200px;bottom:15%;left:20%;transform:rotate(3deg);animation:gpFloat2 26s ease-in-out infinite;animation-delay:-10s}
-.glass-bg .gp5{width:200px;height:140px;bottom:10%;right:15%;transform:rotate(-4deg);animation:gpFloat1 18s ease-in-out infinite;animation-delay:-4s}
-@keyframes gpFloat1{0%,100%{transform:translateX(-50%) translate(0,0) rotate(var(--r,-3deg))}50%{transform:translateX(-50%) translate(10px,-12px) rotate(calc(var(--r,-3deg) + 2deg))}}
-@keyframes gpFloat2{0%,100%{transform:translate(0,0) rotate(var(--r,5deg))}50%{transform:translate(-8px,10px) rotate(calc(var(--r,5deg) - 1deg))}}
-.glass-bg .glass-noise{position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");opacity:1;pointer-events:none}
-.glass-bg .glass-line{position:absolute;width:1px;background:linear-gradient(to bottom,transparent,rgba(255,255,255,0.04),transparent);animation:lineDrift 30s linear infinite}
-.glass-bg .glass-line:nth-child(9){left:25%;height:60%;top:20%}
-.glass-bg .glass-line:nth-child(10){left:55%;height:40%;top:30%;animation-delay:-12s}
-.glass-bg .glass-line:nth-child(11){left:80%;height:50%;top:10%;animation-delay:-20s}
-@keyframes lineDrift{0%{opacity:0;transform:translateY(-20%)}50%{opacity:1}100%{opacity:0;transform:translateY(20%)}}
+.glass-bg .orb{position:absolute;border-radius:50%;filter:blur(120px);opacity:0.06;animation:orbFloat 25s ease-in-out infinite}
+.glass-bg .orb:nth-child(1){width:600px;height:600px;background:#fff;top:-10%;left:-10%}
+.glass-bg .orb:nth-child(2){width:500px;height:500px;background:#fff;bottom:-10%;right:-10%;animation-delay:-12s}
+.glass-bg .glass-panel{position:absolute;inset:0;border-radius:0;background:rgba(255,255,255,0.03);backdrop-filter:blur(20px) saturate(1.2);-webkit-backdrop-filter:blur(20px) saturate(1.2);border:1px solid rgba(255,255,255,0.05)}
+.glass-bg .glass-panel::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.06) 0%,transparent 40%,rgba(255,255,255,0.03) 100%);pointer-events:none}
+.glass-bg .glass-panel::after{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");pointer-events:none}
+@keyframes orbFloat{0%,100%{transform:translate(0,0)}50%{transform:translate(40px,-30px)}}
+.glass-bg.app-mode{background:#060608}
+.glass-bg.app-mode .glass-panel{background:rgba(255,255,255,0.015);backdrop-filter:blur(20px) saturate(1.1);-webkit-backdrop-filter:blur(20px) saturate(1.1)}
 .glass-bg.app-mode .orb{opacity:0.02}
-.glass-bg.app-mode .glass-panel{opacity:0.5}
-.glass-bg.app-mode .glass-line{opacity:0}
 canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none}
 canvas#pc{display:none}
 
@@ -566,10 +551,8 @@ canvas#pc{display:none}
 
 <div class="toast" id="toast"></div>
 <div class="glass-bg" id="glass-bg">
-  <div class="orb"></div><div class="orb"></div><div class="orb"></div>
-  <div class="glass-panel gp1"></div><div class="glass-panel gp2"></div><div class="glass-panel gp3"></div><div class="glass-panel gp4"></div><div class="glass-panel gp5"></div>
-  <div class="glass-line"></div><div class="glass-line"></div><div class="glass-line"></div>
-  <div class="glass-noise"></div>
+  <div class="orb"></div><div class="orb"></div>
+  <div class="glass-panel"></div>
 </div>
 <canvas id="particles"></canvas>
 
