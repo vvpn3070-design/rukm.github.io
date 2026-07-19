@@ -20,8 +20,24 @@ body{background:#000;font-family:'Roboto',sans-serif;color:#fff}
 .glass-bg .blob:nth-child(3){background:rgba(251,146,60,0.1)}
 @keyframes blobDrift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,-20px) scale(1.15)}100%{transform:translate(-20px,25px) scale(0.9)}}
 .glass-bg .glass-panel{position:absolute;inset:0;background:rgba(255,255,255,0.02);backdrop-filter:blur(20px) saturate(1.2);-webkit-backdrop-filter:blur(20px) saturate(1.2)}
-canvas#pc{display:block;position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;transition:opacity 0.8s ease}
-canvas#pc.fade-out{opacity:0;pointer-events:none;display:none}
+#login-bg{position:fixed;inset:0;z-index:0;overflow:hidden;background:radial-gradient(ellipse at center,#0a0e27 0%,#000 100%);transition:opacity 0.8s ease}
+#login-bg.fade-out{opacity:0;pointer-events:none;display:none}
+#login-video-wrap{position:absolute;top:50%;left:50%;width:min(340px,70vw);height:min(340px,70vw);border-radius:50%;overflow:hidden;transform:translate(-50%,-50%);animation:videoSpin 20s linear infinite}
+#login-video{width:100%;height:100%;object-fit:cover}
+@keyframes videoSpin{0%{transform:translate(-50%,-50%) rotate(0deg)}100%{transform:translate(-50%,-50%) rotate(360deg)}}
+.login-glass{position:absolute;inset:0;backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);background:rgba(255,255,255,0.02)}
+.login-stars{position:absolute;inset:0;pointer-events:none;background-image:url('https://www.transparenttextures.com/patterns/stardust.png');background-size:300px 300px;animation:twinkle 3s ease-in-out infinite alternate;opacity:0.7}
+.login-stars-sm{position:absolute;inset:0;pointer-events:none;background-image:url('https://www.transparenttextures.com/patterns/dark-matter.png');background-size:150px 150px;animation:twinkle 5s ease-in-out infinite alternate-reverse;opacity:0.4}
+@keyframes twinkle{0%{opacity:0.3}100%{opacity:1}}
+.login-meteor{position:absolute;width:3px;height:3px;background:#fff;border-radius:50%;box-shadow:0 0 10px rgba(255,255,255,0.9),0 0 20px rgba(255,255,255,0.5);pointer-events:none}
+.login-meteor::after{content:'';position:absolute;top:0;left:0;width:100px;height:2px;background:linear-gradient(to left,rgba(255,255,255,0.8),transparent);transform:rotate(-45deg);transform-origin:right center}
+.login-meteor:nth-child(1){top:5%;left:10%;animation:mShoot1 6s linear infinite}
+.login-meteor:nth-child(2){top:20%;left:80%;animation:mShoot2 9s linear infinite;width:4px;height:4px}
+.login-meteor:nth-child(3){top:50%;left:5%;animation:mShoot1 7s linear infinite 2s}
+.login-meteor:nth-child(4){top:75%;left:60%;animation:mShoot2 8s linear infinite 4s;width:5px;height:5px}
+.login-meteor:nth-child(5){top:40%;left:95%;animation:mShoot1 10s linear infinite 1s}
+@keyframes mShoot1{0%{transform:translate(0,0);opacity:0}5%{opacity:1}20%{transform:translate(-300px,300px);opacity:0}100%{transform:translate(-300px,300px);opacity:0}}
+@keyframes mShoot2{0%{transform:translate(0,0);opacity:0}5%{opacity:1}25%{transform:translate(250px,-250px);opacity:0}100%{transform:translate(250px,-250px);opacity:0}}
 
 .panel{position:fixed;top:0;left:0;width:50%;height:100%;z-index:1;display:flex;flex-direction:column;justify-content:center;padding:40px 60px}
 .panel.hidden{display:none !important}
@@ -551,7 +567,17 @@ canvas#pc.fade-out{opacity:0;pointer-events:none;display:none}
   <div class="blob"></div><div class="blob"></div><div class="blob"></div>
   <div class="glass-panel"></div>
 </div>
-<canvas id="pc"></canvas>
+<div id="login-bg">
+  <div class="login-stars"></div>
+  <div class="login-stars-sm"></div>
+  <div class="login-meteor"></div>
+  <div class="login-meteor"></div>
+  <div class="login-meteor"></div>
+  <div class="login-meteor"></div>
+  <div class="login-meteor"></div>
+  <div id="login-video-wrap"><video id="login-video" autoplay loop muted playsinline src="bg-video.mp4"></video></div>
+  <div class="login-glass"></div>
+</div>
 
 <script>
 (function(){
@@ -593,7 +619,7 @@ function enterApp(u){
   user=u;
   if(u.isAdmin){isAdmin=true;document.getElementById('sidebar-admin').style.display='flex'}
   document.getElementById('panel').classList.add('hidden');
-  document.getElementById('pc').classList.add('fade-out');
+  document.getElementById('login-bg').classList.add('fade-out');
   var blobs=document.querySelectorAll('.glass-bg .blob');
   for(var i=0;i<blobs.length;i++){
     var bw=300+Math.random()*200,bh=300+Math.random()*200;
@@ -787,7 +813,7 @@ function closeSidebar(){document.getElementById('hamburger').classList.remove('a
 document.getElementById('hamburger').addEventListener('click',function(){this.classList.toggle('active');document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('open')});
 document.getElementById('sidebar-overlay').addEventListener('click',closeSidebar);
 
-document.getElementById('sidebar-logout').addEventListener('click',function(){closeSidebar();api('/auth/logout',{method:'POST'}).catch(function(){});user=null;isAdmin=false;stopNotifPolling();closeNotifPanel();var blobs=document.querySelectorAll('.glass-bg .blob');for(var i=0;i<blobs.length;i++)blobs[i].classList.remove('show');document.getElementById('panel').classList.remove('hidden');var pc=document.getElementById('pc');pc.style.display='block';pc.style.opacity='1';pc.classList.remove('fade-out');document.getElementById('feed').classList.remove('open');document.getElementById('avatar-btn').style.display='none';document.getElementById('notif-btn').style.display='none';document.getElementById('hamburger').style.display='none';document.getElementById('top-search').style.display='none';document.getElementById('top-search-icon').style.display='none';document.getElementById('sidebar-admin').style.display='none';document.getElementById('avatar-img').src='default-avatar.jpg';toast('Вы вышли')});
+document.getElementById('sidebar-logout').addEventListener('click',function(){closeSidebar();api('/auth/logout',{method:'POST'}).catch(function(){});user=null;isAdmin=false;stopNotifPolling();closeNotifPanel();var blobs=document.querySelectorAll('.glass-bg .blob');for(var i=0;i<blobs.length;i++)blobs[i].classList.remove('show');document.getElementById('panel').classList.remove('hidden');var lbg=document.getElementById('login-bg');lbg.classList.remove('fade-out');document.getElementById('feed').classList.remove('open');document.getElementById('avatar-btn').style.display='none';document.getElementById('notif-btn').style.display='none';document.getElementById('hamburger').style.display='none';document.getElementById('top-search').style.display='none';document.getElementById('top-search-icon').style.display='none';document.getElementById('sidebar-admin').style.display='none';document.getElementById('avatar-img').src='default-avatar.jpg';toast('Вы вышли')});
 
 document.getElementById('sidebar-search').addEventListener('click',function(){closeSidebar();document.getElementById('search-panel').classList.add('open');document.getElementById('search-input').value='';document.getElementById('search-results').innerHTML='';setTimeout(function(){document.getElementById('search-input').focus()},100)});
 document.getElementById('search-close').addEventListener('click',function(){document.getElementById('search-panel').classList.remove('open')});
@@ -1207,23 +1233,6 @@ var glow=document.getElementById('cursor-glow');
 document.addEventListener('mousemove',function(e){glow.style.left=e.clientX+'px';glow.style.top=e.clientY+'px'});
 })();
 </script>
-<script type="importmap">{"imports":{"three":"./lib/three.module.js","three/addons/":"./lib/"}}</script>
-<script type="module">
-import * as THREE from 'three';
-import { GLTFLoader } from './lib/GLTFLoader.js';
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x000000);
-const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.1,1000);
-const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('pc'),antialias:true,alpha:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;
-scene.add(new THREE.AmbientLight(0xffffff,0.6));
-const key=new THREE.DirectionalLight(0xffffff,4);key.position.set(5,10,7);scene.add(key);
-const fill=new THREE.DirectionalLight(0xffffff,2);fill.position.set(-5,3,-5);scene.add(fill);
-const rim=new THREE.DirectionalLight(0xffffff,2.5);rim.position.set(0,-2,-5);scene.add(rim);
-const topL=new THREE.PointLight(0xffffff,3,50);topL.position.set(0,10,0);scene.add(topL);
-const frontL=new THREE.PointLight(0xffffff,2,50);frontL.position.set(0,0,10);scene.add(frontL);
-let model=null;const loader=new GLTFLoader();
-loader.load('anonymous_small.glb',(gltf)=>{model=gltf.scene;const box=new THREE.Box3().setFromObject(model);const center=box.getCenter(new THREE.Vector3());const size=box.getSize(new THREE.Vector3());const maxDim=Math.max(size.x,size.y,size.z);const fitDist=maxDim*3.0;model.position.sub(center);model.position.x+=fitDist*0.09;camera.position.set(0,0,fitDist);scene.add(model)});
-function animate(){requestAnimationFrame(animate);if(model)model.rotation.y+=0.015;renderer.render(scene,camera)}animate();
-window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-</script>
+
 </body>
 </html>
