@@ -260,7 +260,9 @@ body.theme-glass .report-card{background:rgba(20,20,20,0.7);backdrop-filter:blur
 .post-card .pc-head .pc-user{font-weight:600;font-size:13px;cursor:pointer}
 .post-card .pc-head img:hover,.post-card .pc-head .pc-user:hover{opacity:0.7}
 .post-card .pc-head .pc-cat{font-size:11px;color:rgba(255,255,255,0.2);margin-left:auto;padding:3px 10px;background:rgba(255,255,255,0.04);border-radius:10px}
-.post-card .pc-head .pc-pin{font-size:10px;padding:3px 8px;border-radius:8px;background:rgba(100,160,255,0.12);color:rgba(100,160,255,0.8);font-weight:600;white-space:nowrap;letter-spacing:0.3px}
+.pc-pin{width:16px;height:16px;position:relative;display:inline-block;vertical-align:middle}
+.pc-pin::before{content:'';position:absolute;left:3px;top:1px;width:2px;height:12px;background:rgba(100,160,255,0.6);border-radius:1px;transform:rotate(45deg)}
+.pc-pin::after{content:'';position:absolute;left:0;top:10px;width:8px;height:8px;border:2px solid rgba(100,160,255,0.6);border-top:none;border-left:none;border-radius:0 0 0 6px;transform:rotate(-45deg)}
 .post-card .pc-title{font-weight:700;font-size:16px;margin-bottom:8px}
 .post-card .pc-text{font-weight:300;font-size:13px;color:rgba(255,255,255,0.6);line-height:1.6;white-space:pre-wrap;word-break:break-word}
 .post-card .pc-text a{color:rgba(100,160,255,0.8);text-decoration:none}
@@ -755,7 +757,7 @@ function renderPost(p){
   var time=p.created_at?new Date(p.created_at).toLocaleString('ru'):'';
   var reject='';
   if(p.status==='rejected'&&p.reject_reason)reject='<div class="pc-reject">Отклонено: '+p.reject_reason+'</div>';
-  var pinBadge=p.pinned?'<span class="pc-pin">&#128204; Закреплено</span>':'';
+  var pinBadge=p.pinned?'<span class="pc-pin"></span>':'';
   var banner=u.banner&&u.banner.indexOf('data:')===0?'<img class="pc-banner" src="'+u.banner+'" alt="">':'<div class="pc-banner-no">БАННЕРА НЕТ</div>';
   d.innerHTML=banner+'<div class="pc-head"><img src="'+av+'" alt="" data-uid="'+(u.id||0)+'"><span class="pc-user" data-uid="'+(u.id||0)+'">'+(u.login||'?')+badgeImg(u)+'</span>'+pinBadge+'<span class="pc-cat">'+catLabel+'</span></div><div class="pc-title">'+(p.title||'')+'</div><div class="pc-text">'+preview+'</div><div class="pc-time">'+time+'</div>'+reject;
   var clickables=d.querySelectorAll('[data-uid]');
@@ -965,7 +967,7 @@ function openPostView(pid){
         else mediaHtml='<div class="pv-media-load" onclick="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'">Показать изображение</div><img class="pv-media" src="'+p.media+'" alt="" style="display:none">';
       }
       var pinBtn=isAdmin?'<span style="cursor:pointer;color:rgba(100,160,255,0.7)" onclick="togglePinPost('+p.id+')">'+(p.pinned?'Открепить':'Закрепить')+'</span>':'';
-      body.innerHTML='<div class="pv-title">'+(p.title||'')+'</div>'+(p.pinned?'<div style="font-size:11px;color:rgba(100,160,255,0.7);font-weight:600;margin-bottom:8px">&#128204; Закреплено</div>':'')+'<div class="pv-text">'+text+'</div>'+mediaHtml+'<div class="pv-meta"><span>'+time+'</span>'+pinBtn+(isAdmin?'<span style="cursor:pointer;color:rgba(255,60,60,0.6)" onclick="adminDeletePost('+p.id+');document.getElementById(\'post-view\').classList.remove(\'open\');document.getElementById(\'feed\').style.display=\'\'">Удалить пост</span>':'')+(user?'<span class="report-trigger" onclick="openReport(\'post\','+p.id+')">Пожаловаться</span>':'')+'</div>';
+      body.innerHTML='<div class="pv-title">'+(p.title||'')+'</div>'+(p.pinned?'<span class="pc-pin" style="margin-bottom:8px;display:inline-block"></span>':'')+'<div class="pv-text">'+text+'</div>'+mediaHtml+'<div class="pv-meta"><span>'+time+'</span>'+pinBtn+(isAdmin?'<span style="cursor:pointer;color:rgba(255,60,60,0.6)" onclick="adminDeletePost('+p.id+');document.getElementById(\'post-view\').classList.remove(\'open\');document.getElementById(\'feed\').style.display=\'\'">Удалить пост</span>':'')+(user?'<span class="report-trigger" onclick="openReport(\'post\','+p.id+')">Пожаловаться</span>':'')+'</div>';
       document.getElementById('post-view').classList.add('open');
       document.getElementById('feed').style.display='none';
       api('/logs',{method:'POST',body:JSON.stringify({action:'view_post',device:''+pid})}).catch(function(){});
