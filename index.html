@@ -11,18 +11,16 @@
 @font-face{font-family:'Roboto';src:url('fonts/Roboto-Light.ttf') format('truetype');font-weight:300}
 @font-face{font-family:'Roboto';src:url('fonts/Roboto-Medium.ttf') format('truetype');font-weight:500}
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#060610;font-family:'Roboto',sans-serif;color:#fff}
+body{background:#000;font-family:'Roboto',sans-serif;color:#fff}
 .glass-bg{position:fixed;inset:0;z-index:0;background:#0a0a0a}
-.glass-bg .blob{position:absolute;border-radius:50%;filter:blur(100px);animation:blobDrift 20s ease-in-out infinite alternate;will-change:transform}
-.glass-bg .blob:nth-child(1){width:400px;height:400px;background:rgba(234,88,12,0.12);top:10%;left:5%;animation-duration:22s}
-.glass-bg .blob:nth-child(2){width:350px;height:350px;background:rgba(220,38,38,0.1);top:30%;right:10%;animation-duration:26s;animation-delay:-8s}
-.glass-bg .blob:nth-child(3){width:300px;height:300px;background:rgba(251,146,60,0.08);bottom:10%;left:40%;animation-duration:24s;animation-delay:-14s}
-@keyframes blobDrift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,-20px) scale(1.1)}100%{transform:translate(-20px,25px) scale(0.95)}}
+.glass-bg .blob{position:absolute;border-radius:50%;filter:blur(120px);animation:blobDrift 25s ease-in-out infinite alternate;will-change:transform;opacity:0}
+.glass-bg .blob.show{opacity:1;transition:opacity 3s ease}
+.glass-bg .blob:nth-child(1){background:rgba(234,88,12,0.15)}
+.glass-bg .blob:nth-child(2){background:rgba(220,38,38,0.12)}
+.glass-bg .blob:nth-child(3){background:rgba(251,146,60,0.1)}
+@keyframes blobDrift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,-20px) scale(1.15)}100%{transform:translate(-20px,25px) scale(0.9)}}
 .glass-bg .glass-panel{position:absolute;inset:0;background:rgba(255,255,255,0.02);backdrop-filter:blur(20px) saturate(1.2);-webkit-backdrop-filter:blur(20px) saturate(1.2)}
-.glass-bg .glass-panel::before{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");pointer-events:none}
-.glass-bg.app-mode{background:#060608}
-.glass-bg.app-mode .glass-panel{background:rgba(255,255,255,0.01)}
-canvas#pc{display:block;position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;transition:opacity 0.6s ease}
+canvas#pc{display:block;position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;transition:opacity 0.8s ease}
 canvas#pc.fade-out{opacity:0;pointer-events:none;display:none}
 
 .panel{position:fixed;top:0;left:0;width:50%;height:100%;z-index:1;display:flex;flex-direction:column;justify-content:center;padding:40px 60px}
@@ -595,8 +593,16 @@ function enterApp(u){
   user=u;
   if(u.isAdmin){isAdmin=true;document.getElementById('sidebar-admin').style.display='flex'}
   document.getElementById('panel').classList.add('hidden');
-  document.getElementById('glass-bg').classList.add('app-mode');
   document.getElementById('pc').classList.add('fade-out');
+  var blobs=document.querySelectorAll('.glass-bg .blob');
+  for(var i=0;i<blobs.length;i++){
+    var bw=300+Math.random()*200,bh=300+Math.random()*200;
+    blobs[i].style.width=bw+'px';blobs[i].style.height=bh+'px';
+    blobs[i].style.top=(Math.random()*70+5)+'%';blobs[i].style.left=(Math.random()*80+5)+'%';
+    blobs[i].style.animationDuration=(20+Math.random()*15)+'s';
+    blobs[i].style.animationDelay=(-Math.random()*15)+'s';
+    blobs[i].classList.add('show');
+  }
   document.getElementById('avatar-btn').style.display='block';
   document.getElementById('notif-btn').style.display='flex';
   document.getElementById('hamburger').style.display='flex';
@@ -781,7 +787,7 @@ function closeSidebar(){document.getElementById('hamburger').classList.remove('a
 document.getElementById('hamburger').addEventListener('click',function(){this.classList.toggle('active');document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('open')});
 document.getElementById('sidebar-overlay').addEventListener('click',closeSidebar);
 
-document.getElementById('sidebar-logout').addEventListener('click',function(){closeSidebar();api('/auth/logout',{method:'POST'}).catch(function(){});user=null;isAdmin=false;stopNotifPolling();closeNotifPanel();document.getElementById('panel').classList.remove('hidden');document.getElementById('glass-bg').classList.remove('app-mode');var pc=document.getElementById('pc');pc.style.display='block';pc.style.opacity='1';pc.classList.remove('fade-out');document.getElementById('feed').classList.remove('open');document.getElementById('avatar-btn').style.display='none';document.getElementById('notif-btn').style.display='none';document.getElementById('hamburger').style.display='none';document.getElementById('top-search').style.display='none';document.getElementById('top-search-icon').style.display='none';document.getElementById('sidebar-admin').style.display='none';document.getElementById('avatar-img').src='default-avatar.jpg';toast('Вы вышли')});
+document.getElementById('sidebar-logout').addEventListener('click',function(){closeSidebar();api('/auth/logout',{method:'POST'}).catch(function(){});user=null;isAdmin=false;stopNotifPolling();closeNotifPanel();var blobs=document.querySelectorAll('.glass-bg .blob');for(var i=0;i<blobs.length;i++)blobs[i].classList.remove('show');document.getElementById('panel').classList.remove('hidden');var pc=document.getElementById('pc');pc.style.display='block';pc.style.opacity='1';pc.classList.remove('fade-out');document.getElementById('feed').classList.remove('open');document.getElementById('avatar-btn').style.display='none';document.getElementById('notif-btn').style.display='none';document.getElementById('hamburger').style.display='none';document.getElementById('top-search').style.display='none';document.getElementById('top-search-icon').style.display='none';document.getElementById('sidebar-admin').style.display='none';document.getElementById('avatar-img').src='default-avatar.jpg';toast('Вы вышли')});
 
 document.getElementById('sidebar-search').addEventListener('click',function(){closeSidebar();document.getElementById('search-panel').classList.add('open');document.getElementById('search-input').value='';document.getElementById('search-results').innerHTML='';setTimeout(function(){document.getElementById('search-input').focus()},100)});
 document.getElementById('search-close').addEventListener('click',function(){document.getElementById('search-panel').classList.remove('open')});
