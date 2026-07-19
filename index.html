@@ -13,7 +13,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#060610;font-family:'Roboto',sans-serif;color:#fff}
 .glass-bg{position:fixed;inset:0;z-index:0;background:#0a0a0a}
-.glass-bg .blob{position:absolute;border-radius:50%;filter:blur(100px);animation:blobDrift 20s ease-in-out infinite alternate}
+.glass-bg .blob{position:absolute;border-radius:50%;filter:blur(100px);animation:blobDrift 20s ease-in-out infinite alternate;will-change:transform}
 .glass-bg .blob:nth-child(1){width:400px;height:400px;background:rgba(234,88,12,0.12);top:10%;left:5%;animation-duration:22s}
 .glass-bg .blob:nth-child(2){width:350px;height:350px;background:rgba(220,38,38,0.1);top:30%;right:10%;animation-duration:26s;animation-delay:-8s}
 .glass-bg .blob:nth-child(3){width:300px;height:300px;background:rgba(251,146,60,0.08);bottom:10%;left:40%;animation-duration:24s;animation-delay:-14s}
@@ -22,10 +22,8 @@ body{background:#060610;font-family:'Roboto',sans-serif;color:#fff}
 .glass-bg .glass-panel::before{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");pointer-events:none}
 .glass-bg.app-mode{background:#060608}
 .glass-bg.app-mode .glass-panel{background:rgba(255,255,255,0.01)}
-.glass-bg.app-mode .blob{opacity:0.3}
-canvas#particles{display:none}
-canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none}
-canvas#pc{display:none}
+canvas#pc{display:block;position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;transition:opacity 0.6s ease}
+canvas#pc.fade-out{opacity:0;pointer-events:none;display:none}
 
 .panel{position:fixed;top:0;left:0;width:50%;height:100%;z-index:1;display:flex;flex-direction:column;justify-content:center;padding:40px 60px}
 .panel.hidden{display:none !important}
@@ -555,6 +553,7 @@ canvas#pc{display:none}
   <div class="blob"></div><div class="blob"></div><div class="blob"></div>
   <div class="glass-panel"></div>
 </div>
+<canvas id="pc"></canvas>
 
 <script>
 (function(){
@@ -597,6 +596,7 @@ function enterApp(u){
   if(u.isAdmin){isAdmin=true;document.getElementById('sidebar-admin').style.display='flex'}
   document.getElementById('panel').classList.add('hidden');
   document.getElementById('glass-bg').classList.add('app-mode');
+  document.getElementById('pc').classList.add('fade-out');
   document.getElementById('avatar-btn').style.display='block';
   document.getElementById('notif-btn').style.display='flex';
   document.getElementById('hamburger').style.display='flex';
@@ -781,7 +781,7 @@ function closeSidebar(){document.getElementById('hamburger').classList.remove('a
 document.getElementById('hamburger').addEventListener('click',function(){this.classList.toggle('active');document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('open')});
 document.getElementById('sidebar-overlay').addEventListener('click',closeSidebar);
 
-document.getElementById('sidebar-logout').addEventListener('click',function(){closeSidebar();api('/auth/logout',{method:'POST'}).catch(function(){});user=null;isAdmin=false;stopNotifPolling();closeNotifPanel();document.getElementById('panel').classList.remove('hidden');document.getElementById('glass-bg').classList.remove('app-mode');document.getElementById('feed').classList.remove('open');document.getElementById('avatar-btn').style.display='none';document.getElementById('notif-btn').style.display='none';document.getElementById('hamburger').style.display='none';document.getElementById('top-search').style.display='none';document.getElementById('top-search-icon').style.display='none';document.getElementById('sidebar-admin').style.display='none';document.getElementById('avatar-img').src='default-avatar.jpg';toast('Вы вышли')});
+document.getElementById('sidebar-logout').addEventListener('click',function(){closeSidebar();api('/auth/logout',{method:'POST'}).catch(function(){});user=null;isAdmin=false;stopNotifPolling();closeNotifPanel();document.getElementById('panel').classList.remove('hidden');document.getElementById('glass-bg').classList.remove('app-mode');var pc=document.getElementById('pc');pc.style.display='block';pc.style.opacity='1';pc.classList.remove('fade-out');document.getElementById('feed').classList.remove('open');document.getElementById('avatar-btn').style.display='none';document.getElementById('notif-btn').style.display='none';document.getElementById('hamburger').style.display='none';document.getElementById('top-search').style.display='none';document.getElementById('top-search-icon').style.display='none';document.getElementById('sidebar-admin').style.display='none';document.getElementById('avatar-img').src='default-avatar.jpg';toast('Вы вышли')});
 
 document.getElementById('sidebar-search').addEventListener('click',function(){closeSidebar();document.getElementById('search-panel').classList.add('open');document.getElementById('search-input').value='';document.getElementById('search-results').innerHTML='';setTimeout(function(){document.getElementById('search-input').focus()},100)});
 document.getElementById('search-close').addEventListener('click',function(){document.getElementById('search-panel').classList.remove('open')});
@@ -1200,6 +1200,24 @@ api('/auth/me').then(function(r){if(!r.ok)return;return r.json()}).then(function
 var glow=document.getElementById('cursor-glow');
 document.addEventListener('mousemove',function(e){glow.style.left=e.clientX+'px';glow.style.top=e.clientY+'px'});
 })();
+</script>
+<script type="importmap">{"imports":{"three":"./lib/three.module.js","three/addons/":"./lib/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from './lib/GLTFLoader.js';
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x000000);
+const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.1,1000);
+const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('pc'),antialias:true,alpha:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.2;
+scene.add(new THREE.AmbientLight(0xffffff,0.6));
+const key=new THREE.DirectionalLight(0xffffff,4);key.position.set(5,10,7);scene.add(key);
+const fill=new THREE.DirectionalLight(0xffffff,2);fill.position.set(-5,3,-5);scene.add(fill);
+const rim=new THREE.DirectionalLight(0xffffff,2.5);rim.position.set(0,-2,-5);scene.add(rim);
+const topL=new THREE.PointLight(0xffffff,3,50);topL.position.set(0,10,0);scene.add(topL);
+const frontL=new THREE.PointLight(0xffffff,2,50);frontL.position.set(0,0,10);scene.add(frontL);
+let model=null;const loader=new GLTFLoader();
+loader.load('anonymous_small.glb',(gltf)=>{model=gltf.scene;const box=new THREE.Box3().setFromObject(model);const center=box.getCenter(new THREE.Vector3());const size=box.getSize(new THREE.Vector3());const maxDim=Math.max(size.x,size.y,size.z);const fitDist=maxDim*3.0;model.position.sub(center);model.position.x+=fitDist*0.09;camera.position.set(0,0,fitDist);scene.add(model)});
+function animate(){requestAnimationFrame(animate);if(model)model.rotation.y+=0.015;renderer.render(scene,camera)}animate();
+window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script>
 </body>
 </html>
