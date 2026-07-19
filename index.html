@@ -253,8 +253,8 @@ body.theme-glass .report-card{background:rgba(20,20,20,0.7);backdrop-filter:blur
 
 .post-card{background:rgba(255,255,255,0.03);border-radius:16px;padding:24px 28px;transition:background 0.15s;cursor:pointer;position:relative;overflow:hidden}
 .post-card:hover{background:rgba(255,255,255,0.05)}
-.post-card .pc-banner{position:absolute;top:0;right:0;width:40%;height:100%;object-fit:cover;opacity:0.1;pointer-events:none;border-radius:0 16px 16px 0}
-.post-card .pc-banner-no{text-align:center;color:rgba(255,255,255,0.06);font-size:11px;font-weight:300;letter-spacing:1px;writing-mode:vertical-rl;text-orientation:mixed;position:absolute;top:50%;right:16px;transform:translateY(-50%);pointer-events:none}
+.post-card .pc-banner{position:absolute;top:0;right:0;width:100%;height:60px;object-fit:cover;opacity:0.25;pointer-events:none;border-radius:16px 16px 0 0;mask-image:linear-gradient(to bottom,black 40%,transparent);-webkit-mask-image:linear-gradient(to bottom,black 40%,transparent)}
+.post-card .pc-banner-no{text-align:center;color:rgba(255,255,255,0.06);font-size:11px;font-weight:300;letter-spacing:1px;position:absolute;top:12px;right:20px;pointer-events:none}
 .post-card .pc-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .post-card .pc-head img:not(.user-badge){width:32px;height:32px;border-radius:50%;object-fit:cover;background:#1a1a1a;cursor:pointer}
 .post-card .pc-head .pc-user{font-weight:600;font-size:13px;cursor:pointer}
@@ -749,7 +749,7 @@ function renderPost(p){
   var u=p._user||{};
   var av=u&&u.avatar&&u.avatar.indexOf('data:')===0?u.avatar:'default-avatar.jpg';
   var catLabel=p.category==='manual'?'Мануал':'Другое';
-  var preview=(p.content||'').substring(0,400);
+  var preview=(p.content||'').substring(0,150);
   if(preview.length<(p.content||'').length)preview+='...';
   preview=preview.replace(/(https?:\/\/[^\s]+)/g,'<a href="$1" target="_blank" onclick="event.stopPropagation()">$1</a>');
   var time=p.created_at?new Date(p.created_at).toLocaleString('ru'):'';
