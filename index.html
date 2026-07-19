@@ -13,10 +13,16 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#060610;font-family:'Roboto',sans-serif;color:#fff}
 .glass-bg{position:fixed;inset:0;z-index:0;background:#0a0a0a}
+.glass-bg .blob{position:absolute;border-radius:50%;filter:blur(100px);animation:blobDrift 20s ease-in-out infinite alternate}
+.glass-bg .blob:nth-child(1){width:400px;height:400px;background:rgba(234,88,12,0.12);top:10%;left:5%;animation-duration:22s}
+.glass-bg .blob:nth-child(2){width:350px;height:350px;background:rgba(220,38,38,0.1);top:30%;right:10%;animation-duration:26s;animation-delay:-8s}
+.glass-bg .blob:nth-child(3){width:300px;height:300px;background:rgba(251,146,60,0.08);bottom:10%;left:40%;animation-duration:24s;animation-delay:-14s}
+@keyframes blobDrift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,-20px) scale(1.1)}100%{transform:translate(-20px,25px) scale(0.95)}}
 .glass-bg .glass-panel{position:absolute;inset:0;background:rgba(255,255,255,0.02);backdrop-filter:blur(20px) saturate(1.2);-webkit-backdrop-filter:blur(20px) saturate(1.2)}
 .glass-bg .glass-panel::before{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");pointer-events:none}
 .glass-bg.app-mode{background:#060608}
 .glass-bg.app-mode .glass-panel{background:rgba(255,255,255,0.01)}
+.glass-bg.app-mode .blob{opacity:0.3}
 canvas#particles{display:none}
 canvas#particles{display:block;position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none}
 canvas#pc{display:none}
@@ -546,6 +552,7 @@ canvas#pc{display:none}
 
 <div class="toast" id="toast"></div>
 <div class="glass-bg" id="glass-bg">
+  <div class="blob"></div><div class="blob"></div><div class="blob"></div>
   <div class="glass-panel"></div>
 </div>
 
