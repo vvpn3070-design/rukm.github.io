@@ -282,7 +282,7 @@ app.get('/api/comments/:postId',optionalAuth,function(req,res){
 
 function notify(userId,fromUserId,type,targetId,extra){
   if(userId===fromUserId)return;
-  pool.query('INSERT INTO notifications(user_id,from_user_id,type,target_id,extra) VALUES($1,$2,$3,$4,$5)',[userId,fromUserId,type,targetId,extra||'']).catch(function(){});
+  pool.query('INSERT INTO notifications(user_id,from_user_id,type,target_id,extra) SELECT $1,$2,$3,$4,$5 WHERE NOT EXISTS (SELECT 1 FROM notifications WHERE user_id=$1 AND from_user_id=$2 AND type=$3 AND target_id=$4)',[userId,fromUserId,type,targetId,extra||'']).catch(function(){});
 }
 
 app.post('/api/comments',authMiddleware,function(req,res){
@@ -293,9 +293,13 @@ app.post('/api/comments',authMiddleware,function(req,res){
     if(parentId>0){
       pool.query('SELECT user_id FROM comments WHERE id=$1',[parentId]).then(function(pr){
         if(pr.rows.length)notify(pr.rows[0].user_id,req.userId,'reply',c.id,postId);
-      }).catch(function(){});
-      pool.query('SELECT user_id FROM posts WHERE id=$1',[postId]).then(function(pr){
-        if(pr.rows.length)notify(pr.rows[0].user_id,req.userId,'reply',c.id,postId);
+        pool.query('SELECT user_id FROM posts WHERE id=$1',[postId]).then(function(psr){
+          if(psr.rows.length){
+            var postOwner=psr.rows[0].user_id;
+            var parentAuthor=pr.rows.length?pr.rows[0].user_id:0;
+            if(postOwner!==parentAuthor)notify(postOwner,req.userId,'reply',c.id,postId);
+          }
+        }).catch(function(){});
       }).catch(function(){});
     }else{
       pool.query('SELECT user_id FROM posts WHERE id=$1',[postId]).then(function(pr){

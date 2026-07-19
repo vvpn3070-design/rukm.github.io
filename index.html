@@ -251,8 +251,10 @@ body.theme-glass .report-card{background:rgba(20,20,20,0.7);backdrop-filter:blur
 .feed.open{display:block}
 .feed-inner{width:min(900px,100%);margin:0 auto;display:flex;flex-direction:column;gap:16px}
 
-.post-card{background:rgba(255,255,255,0.03);border-radius:16px;padding:24px 28px;transition:background 0.15s;cursor:pointer}
+.post-card{background:rgba(255,255,255,0.03);border-radius:16px;padding:24px 28px;transition:background 0.15s;cursor:pointer;position:relative;overflow:hidden}
 .post-card:hover{background:rgba(255,255,255,0.05)}
+.post-card .pc-banner{position:absolute;top:0;right:0;width:40%;height:100%;object-fit:cover;opacity:0.1;pointer-events:none;border-radius:0 16px 16px 0}
+.post-card .pc-banner-no{text-align:center;color:rgba(255,255,255,0.06);font-size:11px;font-weight:300;letter-spacing:1px;writing-mode:vertical-rl;text-orientation:mixed;position:absolute;top:50%;right:16px;transform:translateY(-50%);pointer-events:none}
 .post-card .pc-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .post-card .pc-head img:not(.user-badge){width:32px;height:32px;border-radius:50%;object-fit:cover;background:#1a1a1a;cursor:pointer}
 .post-card .pc-head .pc-user{font-weight:600;font-size:13px;cursor:pointer}
@@ -754,7 +756,8 @@ function renderPost(p){
   var reject='';
   if(p.status==='rejected'&&p.reject_reason)reject='<div class="pc-reject">Отклонено: '+p.reject_reason+'</div>';
   var pinBadge=p.pinned?'<span class="pc-pin">&#128204; Закреплено</span>':'';
-  d.innerHTML='<div class="pc-head"><img src="'+av+'" alt="" data-uid="'+(u.id||0)+'"><span class="pc-user" data-uid="'+(u.id||0)+'">'+(u.login||'?')+badgeImg(u)+'</span>'+pinBadge+'<span class="pc-cat">'+catLabel+'</span></div><div class="pc-title">'+(p.title||'')+'</div><div class="pc-text">'+preview+'</div><div class="pc-time">'+time+'</div>'+reject;
+  var banner=u.banner&&u.banner.indexOf('data:')===0?'<img class="pc-banner" src="'+u.banner+'" alt="">':'<div class="pc-banner-no">БАННЕРА НЕТ</div>';
+  d.innerHTML=banner+'<div class="pc-head"><img src="'+av+'" alt="" data-uid="'+(u.id||0)+'"><span class="pc-user" data-uid="'+(u.id||0)+'">'+(u.login||'?')+badgeImg(u)+'</span>'+pinBadge+'<span class="pc-cat">'+catLabel+'</span></div><div class="pc-title">'+(p.title||'')+'</div><div class="pc-text">'+preview+'</div><div class="pc-time">'+time+'</div>'+reject;
   var clickables=d.querySelectorAll('[data-uid]');
   for(var i=0;i<clickables.length;i++){clickables[i].addEventListener('click',function(e){e.stopPropagation();var uid=parseInt(this.dataset.uid);if(uid)openUserProfile(uid)})}
   d.addEventListener('click',function(e){if(e.target.closest('[data-uid]'))return;openPostView(p.id)});
