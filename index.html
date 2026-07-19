@@ -208,12 +208,12 @@ body.theme-glass .report-card{background:rgba(20,20,20,0.7);backdrop-filter:blur
 .pv-close{position:fixed;top:28px;right:28px;z-index:2;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,0.04);cursor:pointer;display:flex;align-items:center;justify-content:center}
 .pv-close:hover{background:rgba(255,255,255,0.08)}
 .pv-close svg{width:18px;height:18px;stroke:rgba(255,255,255,0.4);fill:none;stroke-width:1.5}
-.pv-banner{width:min(700px,100%);height:200px;background:#161616;overflow:hidden;position:relative;border-radius:0 0 16px 16px}
+.pv-banner{width:100px;height:66px;background:#161616;overflow:hidden;position:relative;border-radius:12px;flex-shrink:0;opacity:0.8}
 .pv-founder{display:flex;align-items:center;gap:6px;margin-top:6px;padding:6px 12px;background:rgba(255,255,255,0.04);border-radius:10px;font-weight:300;font-size:12px;color:rgba(255,255,255,0.45);letter-spacing:0.3px}
 .pv-founder-name{font-weight:900;font-size:13px;color:#fff;letter-spacing:0.3px}
 .pv-banner img{width:100%;height:100%;object-fit:cover}
-.pv-banner .banner-placeholder{color:rgba(255,255,255,0.1);font-weight:300;font-size:13px}
-.pv-avatar-wrap{width:100px;height:100px;border-radius:50%;overflow:hidden;margin-top:-50px;position:relative;border:3px solid #080808}
+.pv-banner .banner-placeholder{color:rgba(255,255,255,0.1);font-weight:300;font-size:9px;text-align:center;padding-top:24px}
+.pv-avatar-wrap{width:80px;height:80px;border-radius:50%;overflow:hidden;position:relative;border:3px solid #080808}
 .pv-avatar-wrap img{width:100%;height:100%;object-fit:cover}
 .pv-info{width:min(700px,90vw);padding-bottom:60px}
 .pv-user-row{display:inline-flex;align-items:center;gap:0;margin-top:12px}
@@ -253,8 +253,8 @@ body.theme-glass .report-card{background:rgba(20,20,20,0.7);backdrop-filter:blur
 
 .post-card{background:rgba(255,255,255,0.03);border-radius:16px;padding:24px 28px;transition:background 0.15s;cursor:pointer;position:relative;overflow:hidden}
 .post-card:hover{background:rgba(255,255,255,0.05)}
-.post-card .pc-banner{position:absolute;top:0;right:0;width:100%;height:60px;object-fit:cover;opacity:0.25;pointer-events:none;border-radius:16px 16px 0 0;mask-image:linear-gradient(to bottom,black 40%,transparent);-webkit-mask-image:linear-gradient(to bottom,black 40%,transparent)}
-.post-card .pc-banner-no{text-align:center;color:rgba(255,255,255,0.06);font-size:11px;font-weight:300;letter-spacing:1px;position:absolute;top:12px;right:20px;pointer-events:none}
+.post-card .pc-banner{position:absolute;top:0;right:0;width:120px;height:80px;object-fit:cover;opacity:0.35;pointer-events:none;border-radius:0 16px 0 16px;mask-image:linear-gradient(to bottom left,black 40%,transparent);-webkit-mask-image:linear-gradient(to bottom left,black 40%,transparent)}
+.post-card .pc-banner-no{text-align:center;color:rgba(255,255,255,0.06);font-size:11px;font-weight:300;letter-spacing:1px;position:absolute;top:10px;right:14px;pointer-events:none}
 .post-card .pc-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .post-card .pc-head img:not(.user-badge){width:32px;height:32px;border-radius:50%;object-fit:cover;background:#1a1a1a;cursor:pointer}
 .post-card .pc-head .pc-user{font-weight:600;font-size:13px;cursor:pointer}
@@ -884,8 +884,10 @@ function openUserProfile(uid){
     var views=u.views||0;
     var isFounder=u.isAdmin;
     api('/users/'+uid+'/view',{method:'POST'}).catch(function(){});
-    var h='<div class="pv-banner">'+(banner?'<img src="'+banner+'" alt="">':'<span class="banner-placeholder"></span>')+'</div>';
+    var h='<div style="display:flex;align-items:flex-start;justify-content:space-between">';
     h+='<div class="pv-avatar-wrap"><img src="'+av+'" alt=""></div>';
+    h+='<div class="pv-banner">'+(banner?'<img src="'+banner+'" alt="">':'<span class="banner-placeholder">БАННЕРА НЕТ</span>')+'</div>';
+    h+='</div>';
     h+='<div class="pv-info">';
     h+='<div class="pv-user-row"><span class="pv-user-login">'+escapeHtml(u.login||'')+'</span>'+badgeImg(u)+'</div>';
     if(isFounder)h+='<div class="pv-founder"><span class="pv-founder-name">'+u.login+'</span> — является администратором нашего форума.</div>';
