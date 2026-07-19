@@ -260,9 +260,7 @@ body.theme-glass .report-card{background:rgba(20,20,20,0.7);backdrop-filter:blur
 .post-card .pc-head .pc-user{font-weight:600;font-size:13px;cursor:pointer}
 .post-card .pc-head img:hover,.post-card .pc-head .pc-user:hover{opacity:0.7}
 .post-card .pc-head .pc-cat{font-size:11px;color:rgba(255,255,255,0.2);margin-left:auto;padding:3px 10px;background:rgba(255,255,255,0.04);border-radius:10px}
-.pc-pin{width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;position:relative}
-.pc-pin::before{content:'';position:absolute;top:0;left:5px;width:4px;height:4px;background:#fff;border-radius:50%}
-.pc-pin::after{content:'';position:absolute;top:4px;left:6px;width:2px;height:10px;background:#fff;border-radius:0 0 1px 1px}
+.pc-pin{display:inline-block;vertical-align:middle}
 .post-card .pc-title{font-weight:700;font-size:16px;margin-bottom:8px}
 .post-card .pc-text{font-weight:300;font-size:13px;color:rgba(255,255,255,0.6);line-height:1.6;white-space:pre-wrap;word-break:break-word}
 .post-card .pc-text a{color:rgba(100,160,255,0.8);text-decoration:none}
@@ -757,7 +755,8 @@ function renderPost(p){
   var time=p.created_at?new Date(p.created_at).toLocaleString('ru'):'';
   var reject='';
   if(p.status==='rejected'&&p.reject_reason)reject='<div class="pc-reject">Отклонено: '+p.reject_reason+'</div>';
-  var pinBadge=p.pinned?'<span class="pc-pin"></span>':'';
+  var pinSvg='<svg viewBox="0 0 24 24" style="transform:rotate(-25deg);width:14px;height:14px;vertical-align:middle;margin-right:4px"><circle cx="10" cy="7" r="4" fill="#fff" stroke="none"/><line x1="12" y1="10" x2="17" y2="22" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>';
+  var pinBadge=p.pinned?'<span class="pc-pin">'+pinSvg+'</span>':'';
   var banner=u.banner&&u.banner.indexOf('data:')===0?'<img class="pc-banner" src="'+u.banner+'" alt="">':'<div class="pc-banner-no">БАННЕРА НЕТ</div>';
   d.innerHTML=banner+'<div class="pc-head"><img src="'+av+'" alt="" data-uid="'+(u.id||0)+'"><span class="pc-user" data-uid="'+(u.id||0)+'">'+(u.login||'?')+badgeImg(u)+'</span>'+pinBadge+'<span class="pc-cat">'+catLabel+'</span></div><div class="pc-title">'+(p.title||'')+'</div><div class="pc-text">'+preview+'</div><div class="pc-time">'+time+'</div>'+reject;
   var clickables=d.querySelectorAll('[data-uid]');
@@ -967,7 +966,7 @@ function openPostView(pid){
         else mediaHtml='<div class="pv-media-load" onclick="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'">Показать изображение</div><img class="pv-media" src="'+p.media+'" alt="" style="display:none">';
       }
       var pinBtn=isAdmin?'<span style="cursor:pointer;color:rgba(100,160,255,0.7)" onclick="togglePinPost('+p.id+')">'+(p.pinned?'Открепить':'Закрепить')+'</span>':'';
-      body.innerHTML='<div class="pv-title">'+(p.title||'')+'</div>'+(p.pinned?'<span class="pc-pin" style="margin-bottom:8px;display:inline-block"></span>':'')+'<div class="pv-text">'+text+'</div>'+mediaHtml+'<div class="pv-meta"><span>'+time+'</span>'+pinBtn+(isAdmin?'<span style="cursor:pointer;color:rgba(255,60,60,0.6)" onclick="adminDeletePost('+p.id+');document.getElementById(\'post-view\').classList.remove(\'open\');document.getElementById(\'feed\').style.display=\'\'">Удалить пост</span>':'')+(user?'<span class="report-trigger" onclick="openReport(\'post\','+p.id+')">Пожаловаться</span>':'')+'</div>';
+      body.innerHTML='<div class="pv-title">'+(p.title||'')+'</div>'+(p.pinned?'<svg viewBox="0 0 24 24" style="transform:rotate(-25deg);width:16px;height:16px;vertical-align:middle;margin-bottom:8px"><circle cx="10" cy="7" r="4" fill="#fff" stroke="none"/><line x1="12" y1="10" x2="17" y2="22" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>':'')+'<div class="pv-text">'+text+'</div>'+mediaHtml+'<div class="pv-meta"><span>'+time+'</span>'+pinBtn+(isAdmin?'<span style="cursor:pointer;color:rgba(255,60,60,0.6)" onclick="adminDeletePost('+p.id+');document.getElementById(\'post-view\').classList.remove(\'open\');document.getElementById(\'feed\').style.display=\'\'">Удалить пост</span>':'')+(user?'<span class="report-trigger" onclick="openReport(\'post\','+p.id+')">Пожаловаться</span>':'')+'</div>';
       document.getElementById('post-view').classList.add('open');
       document.getElementById('feed').style.display='none';
       api('/logs',{method:'POST',body:JSON.stringify({action:'view_post',device:''+pid})}).catch(function(){});
